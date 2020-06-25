@@ -1,7 +1,8 @@
 import tensorflow as tf
 
-from encoder_tf import GraphAttentionEncoder, get_data_onthefly
-from decoder_tf import Sampler, TopKSampler, CategoricalSampler, DecoderCell
+from data import generate_data
+from encoder import GraphAttentionEncoder
+from decoder import Sampler, TopKSampler, CategoricalSampler, DecoderCell
 from env import AgentVRP
 
 class AttentionModel(tf.keras.Model):
@@ -14,41 +15,17 @@ class AttentionModel(tf.keras.Model):
 		if embed_dim % n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 
-		# attributes for VRP problem
 		self.AgentClass = AgentVRP
 		
 		self.encoder = GraphAttentionEncoder(embed_dim = embed_dim,
 											  n_heads = n_heads,
 											  n_layers = n_encode_layers)
 		
-		self.decoder = DecoderCell(n_heads = n_heads,
-									clip = tanh_clipping)
+		self.decoder = DecoderCell(n_heads = n_heads, clip = tanh_clipping)
 		
 		self.selecter = {'greedy': TopKSampler(),
-						'categorical': CategoricalSampler()}.get(decode_type, None)
-		assert self.selecter is not None, 'decode_type: greedy or categorical'
-
-	# def get_log_likelihood(self, _log_p, pi):
-
-	# 	# Get log_p corresponding to selected actions
-	# 	log_p = tf.gather_nd(_log_p, tf.cast(tf.expand_dims(pi, axis=-1), tf.int32), batch_dims=2)
-	# 	# tf.matmul
-
-	# 	# Calculate log_likelihood
-	# 	print('log_p:', log_p)
-	# 	return tf.reduce_sum(log_p,1)
-
-	def get_log_likelihood(self, _log_p, pi):
-		# _log_p: (batch, n_nodes, decode_step)
-		# pi: (batch, decode_step) # tour
-		transpose_log_p = tf.transpose(_log_p, perm = (0,2,1))
-		print('transpose_log_p[0]:', transpose_log_p[0])
-		# one_hot = tf.one_hot(indices = pi, depth = self.n_nodes)
-		# one_hot: (batch, decode_step, n_nodes)
-		# log_p = tf.matmul(one_hot, _log_p)
-		log_p = tf.gather(_log_p, indices = pi, batch_dims = 1)
-		print('log_p[0]:', log_p[0])
-		return tf.reduce_sum(log_p, 1)
+						'sampling': CategoricalSampler()}.get(decode_type, None)
+		assert self.selecter is not None, 'decode_type: greedy or sampling'
 
 	def update_context_and_mask(self, next_node, node_embeddings, graph_embedding):
 		# next_node: (batch, 1), minval = 0, maxval = n_nodes-1, dtype = tf.int32
@@ -117,38 +94,30 @@ class AttentionModel(tf.keras.Model):
 				# log_p: (batch, 1, n_nodes) <-- logits: (batch, 1, n_nodes)
 				# log(exp(x_i) / exp(x).sum())
 				
-				# log_ps.append(tf.squeeze(log_p, axis = 1))
 				tours.append(tf.squeeze(next_node, axis = 1))
 				# print(next_node)
 				
 				log_ps.append(tf.gather(tf.squeeze(log_p, axis = 1), indices = next_node, batch_dims = 1))
 
-			print(i)
+			# print(i)
 			i += 1
-		
-		# _log_p, pi = tf.stack(log_ps, 2), tf.stack(tours, 1)
 		pi = tf.stack(tours, 1)
-		
 		cost = self.env.get_costs(pi)
-
-		# ll = self.get_log_likelihood(_log_p, pi)
-		# _log_p: (batch, n_nodes, decode_step)
-		# pi: (batch, decode_step) # tour
 		ll = tf.reduce_sum(tf.stack(log_ps, 0), 0)
-		
 		if return_pi:
 			return cost, ll, pi
-
 		return cost, ll
 		
 if __name__ == '__main__':
 	model = AttentionModel()
-	dataset = get_data_onthefly()
+	model.decode_type = 'sampling'
+	dataset = generate_data()
 	for i, data in enumerate(dataset.batch(4)):
 		output = model(data, return_pi = True)
-		print(output[0])
-		print(output[1])
-		print(output[2])
+		print(output[0])# cost: (batch,)
+		print(output[1])# ll: (batch, 1)
+		print(output[2])# pi: (batch, decode_step) # tour
 		if i == 0:
 			break
+	model.summary()
 

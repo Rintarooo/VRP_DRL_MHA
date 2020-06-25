@@ -88,7 +88,6 @@ class AgentVRP():
 			d: (batch, decode_step, 2)
 		"""
 		d = tf.gather(self.xy, indices = pi, batch_dims = 1)
-		print(d.shape)
 		# Note: first element of pi is not depot, but the first selected node in the path
 		return (tf.reduce_sum(tf.norm(d[:, 1:] - d[:, :-1], ord=2, axis=2), axis=1)
 				+ tf.norm(d[:, 0] - self.depot_xy, ord=2, axis=1) # Distance from depot to first selected node

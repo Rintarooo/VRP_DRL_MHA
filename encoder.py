@@ -1,5 +1,6 @@
 import tensorflow as tf
-from layers_tf import MultiHeadAttention
+from layers import MultiHeadAttention
+from data import generate_data
 
 class ResidualBlock_BN(tf.keras.layers.Layer):
 	def __init__(self, MHA, **kwargs):
@@ -66,30 +67,19 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		for layer in self.attention_layers:
 			x = layer(x, mask)# stack attention layers
 
-		return (x, tf.reduce_mean(x, axis=1))
+		return (x, tf.reduce_mean(x, axis = 1))
 		"""	(node embeddings(= embedding for all nodes), graph embedding(= mean of node embeddings for graph))
 				=((batch_size, n_nodes, embed_dim), (batch_size, embed_dim))
 		"""
-def get_data_onthefly(num_samples=10000, graph_size=20):
-	"""Generate temp dataset in memory
-	"""
-	CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
-	depot, graphs, demand = (tf.random.uniform(shape=(num_samples, 2), minval=0, maxval=1),
-							tf.random.uniform(minval=0, maxval=1, shape=(num_samples, graph_size, 2)),
-							tf.cast(tf.random.uniform(minval=1, maxval=10, shape=(num_samples, graph_size),
-													  dtype=tf.int32), tf.float32) / tf.cast(CAPACITIES[graph_size], tf.float32)
-							)
 
-	return tf.data.Dataset.from_tensor_slices((list(depot), list(graphs), list(demand)))
 
 if __name__ == '__main__':
 	encoder = GraphAttentionEncoder()
-	dataset = get_data_onthefly()
-	# print(next(iter(dataset)))
-	# output = encoder(next(itr))
+	dataset = generate_data()
 	for i, data in enumerate(dataset.batch(5)):
 		output = encoder(data)
 		print(output[0].shape)
 		print(output[1].shape)
 		if i == 0:
 			break
+	encoder.summary()
