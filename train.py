@@ -32,6 +32,7 @@ def train(cfg, log_path = None):
 		
 		for t, inputs in tqdm(enumerate(dataset.batch(cfg.batch))):
 			grad_target, grad, L_mean = REINFORCE(model, inputs, bs, baseline, t)
+			grad, _ = tf.clip_by_global_norm(grad, 1.0)
 			optimizer.apply_gradients(zip(grad, model.trainable_variables))# update model parameter
 
 			ave_loss.update_state(grad_target)
