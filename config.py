@@ -11,8 +11,9 @@ def arg_parser():
 
 	# train config
 	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 128, help = 'batch size')
-	parser.add_argument('-bs', '--batch_steps', metavar = 'S', type = int, default = 10, help = 'number of samples = batch * batch_steps')
-	parser.add_argument('-e', '--epochs', metavar = 'E', type = int, default = 10, help = 'total number of samples = epochs * number of samples')
+	parser.add_argument('-bs', '--batch_steps', metavar = 'S', type = int, default = 10000, help = 'number of samples = batch * batch_steps')
+	parser.add_argument('-nr', '--n_rollout_samples', metavar = 'R', type = int, default = 10000, help = 'baseline rollout number of samples')
+	parser.add_argument('-e', '--epochs', metavar = 'E', type = int, default = 100, help = 'total number of samples = epochs * number of samples')
 	parser.add_argument('-em', '--embed_dim', metavar = 'EM', type = int, default = 128, help = 'embedding size')
 	parser.add_argument('-nh', '--n_heads', metavar = 'NH', type = int, default = 8, help = 'number of heads in MHA')
 	parser.add_argument('-c', '--tanh_clipping', metavar = 'C', type = float, default = 10., help = 'improve exploration; clipping logits')

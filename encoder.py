@@ -10,7 +10,7 @@ class ResidualBlock_BN(tf.keras.layers.Layer):
 
 	def call(self, x, mask = None):
 		if mask is None:
-			return self.BN(x + self.MHA(x))
+			return self.BN(x + self.MHA(x))# training = True
 		else:
 			return self.BN(x + self.MHA(x, mask))
 
@@ -83,3 +83,6 @@ if __name__ == '__main__':
 		if i == 0:
 			break
 	encoder.summary()
+	for w in encoder.non_trainable_weights:
+		print(w.name)
+	

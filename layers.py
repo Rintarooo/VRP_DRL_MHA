@@ -13,22 +13,22 @@ class DotProductAttention(tf.keras.layers.Layer):
 		# print('Q.shape:', Q.shape)
 		# print('K.shape:', K.shape)
 		# print('V.shape:', V.shape)
-		K_dim = tf.cast(tf.shape(K)[-1], tf.float32)
-		logits = tf.matmul(Q, K, transpose_b = True) / tf.math.sqrt(K_dim)
+		d_k = tf.cast(tf.shape(K)[-1], tf.float32)
+		logits = tf.matmul(Q, K, transpose_b = True) / tf.math.sqrt(d_k)
 		# (batch, seq_len, head_depth) * (batch, head_depth, seq_len)
 		# = (batch, seq_len, seq_len)
 		if self.clip is not None:
 			logits = self.clip * tf.tanh(logits)
 		if mask is not None:
 			logits = tf.where(tf.transpose(mask, perm=(0, 2, 1)), tf.ones_like(logits) * (-np.inf), logits)
-			# tf.cast(target, tf.bool): [not 0] -> [True], [0] -> [False]
-			# mask: tf.Tensor([[ True], [ True], [False]])
-			# [True] -> 1*-np.inf, [False] -> logits
+			""" mask: tf.Tensor([[ True], [ True], [False]])
+				[True] -> [1 * -np.inf], [False] -> [logits]
+			"""
 		if self.return_logits:
 			return logits
 		probs = tf.nn.softmax(logits, axis = -1)
 		return tf.matmul(probs, V)
-		
+
 class MultiHeadAttention(tf.keras.layers.Layer):
 	def __init__(self, n_heads = 8, embed_dim = 128, **kwargs):
 		super().__init__(**kwargs)
@@ -39,7 +39,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		if self.embed_dim % self.n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 
-		self.Wq = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # (embed_dim, d_q)
+		self.Wq = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # torch.nn.Linear(embed_dim, d_q(=head_depth))
 		self.Wk = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # (embed_dim, d_k)
 		self.Wv = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # (embed_dim, d_v)		
 		self.Wq_layers = [self.Wq for _ in range(n_heads)]
@@ -51,7 +51,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 	
 	def call(self, x, mask = None):
 		"""	q, k, v = x
-			x: [x, x, x]
+			encoder x: [x, x, x]
 			shape of q: (batch, n_nodes, embed_dim)
 			output: (batch, n_nodes, embed_dim)
 		"""
@@ -65,7 +65,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 if __name__ == '__main__':
 	mha = MultiHeadAttention(n_heads = 8, embed_dim = 128, name = 'MHA')# input_shape[2] = embed_dim = 128
 	batch, n_nodes, embed_dim = 5, 21, 128
-	x = tf.ones((batch, n_nodes, embed_dim), dtype = tf.float32)
+	x = tf.random.uniform((batch, n_nodes, embed_dim), dtype = tf.float32)
 	output = mha([x,x,x])
 	print(output.shape)
 

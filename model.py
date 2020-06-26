@@ -28,18 +28,12 @@ class AttentionModel(tf.keras.Model):
 		assert self.selecter is not None, 'decode_type: greedy or sampling'
 
 	def update_context_and_mask(self, next_node, node_embeddings, graph_embedding):
-		# next_node: (batch, 1), minval = 0, maxval = n_nodes-1, dtype = tf.int32
-		# mask: (batch, n_nodes, 1)
-		visited_mask = tf.zeros_like(node_embeddings[:,:,:1], dtype=tf.uint8)
 		one_hot = tf.one_hot(indices = next_node, depth = self.n_nodes)
-		# one_hot: (batch, 1, n_nodes)
-		visited_mask += tf.transpose(tf.cast(one_hot, dtype = tf.uint8), (0,2,1))
-
+		# next_node: (batch, 1) tf.int32, range[0, n_nodes-1]--> one_hot: (batch, 1, n_nodes)		
+		visited_mask = tf.transpose(tf.cast(one_hot, dtype = tf.bool), (0,2,1))
 		mask, D = self.env.think_capacity(next_node, visited_mask)
-		
 		prev_node_embedding = tf.matmul(one_hot, node_embeddings)
 		# prev_node_embedding: (batch, 1, embed_dim)
-		 
 		context = tf.concat((graph_embedding[:,None,:], prev_node_embedding, D[:,:,None]), axis=-1)
 		return mask, context
 
@@ -60,14 +54,13 @@ class AttentionModel(tf.keras.Model):
 	def call(self, x, return_pi=False):
 		""" node_embeddings: (batch, n_nodes, embed_dim)
 			graph_embedding: (batch, embed_dim)
+			mask: (batch, n_nodes, 1)
+			context: (batch, 1, 2*embed_dim+1)
 		"""
 		node_embeddings, graph_embedding = self.encoder(x)
 		self.batch, self.n_nodes, _ = tf.shape(node_embeddings)
 		mask = self.create_mask()
 		context = self.create_context(node_embeddings, graph_embedding)
-		""" mask: (batch, n_nodes, 1)
-			context: (batch, 1, 2*embed_dim+1)
-		"""
 		log_ps, tours = [], []
 		self.env = self.AgentClass(x)
 
@@ -84,26 +77,23 @@ class AttentionModel(tf.keras.Model):
 			while not self.env.partial_visited():
 
 				# compute MHA decoder vectors for current mask
-				logits = self.decoder([context, node_embeddings], mask)# context: (batch, 1, 3*embed_dim), node_embeddings: (batch, 1, embed_dim)
+				logits = self.decoder([context, node_embeddings], mask)# context: (batch, 1, 2*embed_dim+1), node_embeddings: (batch, 1, embed_dim)
 				# logits: (batch, 1, n_nodes), logits denotes the value before going into softmax 
 				next_node = self.selecter(tf.squeeze(logits, axis = 1))
-				# next_node: (batch, 1), minval = 0, maxval = n_nodes, dtype = tf.int32
+				# next_node: (batch, 1), minval = 0, maxval = n_nodes-1, dtype = tf.int32
 				mask, context = self.update_context_and_mask(next_node, node_embeddings, graph_embedding)
 				
-				log_p = tf.nn.log_softmax(logits, axis = -1)
+				log_p = tf.nn.log_softmax(logits, axis = -1)# log(exp(x_i) / exp(x).sum())
 				# log_p: (batch, 1, n_nodes) <-- logits: (batch, 1, n_nodes)
-				# log(exp(x_i) / exp(x).sum())
 				
 				tours.append(tf.squeeze(next_node, axis = 1))
-				# print(next_node)
-				
 				log_ps.append(tf.gather(tf.squeeze(log_p, axis = 1), indices = next_node, batch_dims = 1))
-
 			# print(i)
 			i += 1
+
 		pi = tf.stack(tours, 1)
-		cost = self.env.get_costs(pi)
 		ll = tf.reduce_sum(tf.stack(log_ps, 0), 0)
+		cost = self.env.get_costs(pi)
 		if return_pi:
 			return cost, ll, pi
 		return cost, ll
@@ -119,5 +109,6 @@ if __name__ == '__main__':
 		print(output[2])# pi: (batch, decode_step) # tour
 		if i == 0:
 			break
+	print(model.trainable_variables)
 	model.summary()
 
