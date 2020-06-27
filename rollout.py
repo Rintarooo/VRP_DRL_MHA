@@ -152,7 +152,6 @@ class RolloutBaseline:
 	def eval_all(self, dataset):
 		"""Evaluates current baseline model on the whole dataset only for non warm-up epochs
 		"""
-
 		if self.alpha < 1:
 			return None
 

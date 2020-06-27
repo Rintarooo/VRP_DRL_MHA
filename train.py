@@ -13,7 +13,7 @@ def REINFORCE(model, inputs, bs, baseline, t):
 		b = bs[t] if bs is not None else baseline.eval(inputs, L)
 		b = tf.stop_gradient(b)
 		loss, L_mean = tf.reduce_mean((L - b) * logp), tf.reduce_mean(L)
-	grad = tape.gradient(loss, model.trainable_variables)# model.trainable_variables == thita
+	grad = tape.gradient(loss, model.trainable_weights)# model.trainable_weights == thita
 	return loss, grad, L_mean
 	
 def train(cfg, log_path = None):
@@ -30,12 +30,12 @@ def train(cfg, log_path = None):
 		t1 = time()
 		dataset = generate_data(cfg.n_samples, cfg.n_customer)
 		bs = baseline.eval_all(dataset)
-		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # (cfg.batch_steps, cfg.batch) or None
+		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
 		
 		for t, inputs in tqdm(enumerate(dataset.batch(cfg.batch))):
 			loss, grad, L_mean = REINFORCE(model, inputs, bs, baseline, t)
 			grad, _ = tf.clip_by_global_norm(grad, 1.0)
-			optimizer.apply_gradients(zip(grad, model.trainable_variables))# optimizer.step
+			optimizer.apply_gradients(zip(grad, model.trainable_weights))# optimizer.step
 
 			ave_loss.update_state(loss)
 			ave_L.update_state(L_mean)

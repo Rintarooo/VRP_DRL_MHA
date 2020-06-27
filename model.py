@@ -16,13 +16,8 @@ class AttentionModel(tf.keras.Model):
 			raise ValueError("embed_dim = n_heads * head_depth")
 
 		self.AgentClass = AgentVRP
-		
-		self.encoder = GraphAttentionEncoder(embed_dim = embed_dim,
-											  n_heads = n_heads,
-											  n_layers = n_encode_layers)
-		
+		self.encoder = GraphAttentionEncoder(embed_dim = embed_dim, n_heads = n_heads, n_layers = n_encode_layers)
 		self.decoder = DecoderCell(n_heads = n_heads, clip = tanh_clipping)
-		
 		self.selecter = {'greedy': TopKSampler(),
 						'sampling': CategoricalSampler()}.get(decode_type, None)
 		assert self.selecter is not None, 'decode_type: greedy or sampling'
@@ -77,7 +72,7 @@ class AttentionModel(tf.keras.Model):
 			while not self.env.partial_visited():
 
 				# compute MHA decoder vectors for current mask
-				logits = self.decoder([context, node_embeddings], mask)# context: (batch, 1, 2*embed_dim+1), node_embeddings: (batch, 1, embed_dim)
+				logits = self.decoder([context, node_embeddings], mask)
 				# logits: (batch, 1, n_nodes), logits denotes the value before going into softmax 
 				next_node = self.selecter(tf.squeeze(logits, axis = 1))
 				# next_node: (batch, 1), minval = 0, maxval = n_nodes-1, dtype = tf.int32
@@ -85,7 +80,6 @@ class AttentionModel(tf.keras.Model):
 				
 				log_p = tf.nn.log_softmax(logits, axis = -1)# log(exp(x_i) / exp(x).sum())
 				# log_p: (batch, 1, n_nodes) <-- logits: (batch, 1, n_nodes)
-				
 				tours.append(tf.squeeze(next_node, axis = 1))
 				log_ps.append(tf.gather(tf.squeeze(log_p, axis = 1), indices = next_node, batch_dims = 1))
 			# print(i)
@@ -109,6 +103,8 @@ if __name__ == '__main__':
 		print(output[2])# pi: (batch, decode_step) # tour
 		if i == 0:
 			break
-	print(model.trainable_variables)
+	# print('model.trainable_weights')
+	# for w in model.trainable_weights:
+	# 	print(w.name)
 	model.summary()
 
