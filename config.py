@@ -10,8 +10,8 @@ def arg_parser():
 	parser.add_argument('-nc', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
 
 	# train config
-	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 128, help = 'batch size')
-	parser.add_argument('-bs', '--batch_steps', metavar = 'S', type = int, default = 10000, help = 'number of samples = batch * batch_steps')
+	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 256, help = 'batch size')
+	parser.add_argument('-bs', '--batch_steps', metavar = 'S', type = int, default = 100, help = 'number of samples = batch * batch_steps')
 	parser.add_argument('-nr', '--n_rollout_samples', metavar = 'R', type = int, default = 10000, help = 'baseline rollout number of samples')
 	parser.add_argument('-e', '--epochs', metavar = 'E', type = int, default = 100, help = 'total number of samples = epochs * number of samples')
 	parser.add_argument('-em', '--embed_dim', metavar = 'EM', type = int, default = 128, help = 'embedding size')
@@ -21,6 +21,7 @@ def arg_parser():
 	
 	parser.add_argument('--lr', metavar = 'LR', type = float, default = 1e-4, help = 'initial learning rate')
 	parser.add_argument('-wb', '--warmup_beta', metavar = 'WB', type = float, default = 0.8, help = 'exponential moving average, warmup')
+	parser.add_argument('-we', '--wp_epochs', metavar = 'WE', type = int, default = 5, help = 'warmup epochs')
 	parser.add_argument('-minv', '--init_min', metavar = 'MINV', type = float, default = -0.08, help = 'initialize weight minimun value -0.08~')
 	parser.add_argument('-maxv', '--init_max', metavar = 'MAXV', type = float, default = 0.08, help = 'initialize weight ~0.08 maximum value')
 	
@@ -52,7 +53,7 @@ def dump_pkl(args, verbose = True, param_log = True):
 		if verbose:
 			print(''.join('%s: %s\n'%item for item in vars(cfg).items()))
 		if param_log:
-			path = '%s%s_%s_param.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/
+			path = '%sparam_%s_%s.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/
 			with open(path, 'w') as f:
 				f.write(''.join('%s,%s\n'%item for item in vars(cfg).items())) 
 	
@@ -66,17 +67,17 @@ def load_pkl(pkl_path, verbose = True):
 		os.environ['CUDA_VISIBLE_DEVICE'] = cfg.cuda_dv
 	return cfg
 
-def pkl_parser():
+def file_parser():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-p', '--path', metavar = 'P', type = str, 
-						default = './Pkl/VRP20_train.pkl', help = 'pkl file path')
+						default = './Pkl/VRP20_train.pkl', help = 'file path, pkl or h5 only')
 	args = parser.parse_args()
 	return args
 	
 if __name__ == '__main__':
 	args = arg_parser()
 	dump_pkl(args)
-	# cfg = load_pkl(pkl_parser().path)
+	# cfg = load_pkl(file_parser().path)
 	# for k, v in vars(cfg).items():
 	# 	print(k, v)
 	# 	print(vars(cfg)[k])#==v

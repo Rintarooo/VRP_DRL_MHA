@@ -86,7 +86,7 @@ class AttentionModel(tf.keras.Model):
 			i += 1
 
 		pi = tf.stack(tours, 1)
-		ll = tf.reduce_sum(tf.stack(log_ps, 0), 0)
+		ll = tf.squeeze(tf.reduce_sum(tf.stack(log_ps, 0), 0), axis = 1)
 		cost = self.env.get_costs(pi)
 		if return_pi:
 			return cost, ll, pi
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 	for i, data in enumerate(dataset.batch(4)):
 		output = model(data, return_pi = True)
 		print(output[0])# cost: (batch,)
-		print(output[1])# ll: (batch, 1)
+		print(output[1])# ll: (batch,)
 		print(output[2])# pi: (batch, decode_step) # tour
 		if i == 0:
 			break

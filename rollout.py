@@ -1,7 +1,6 @@
 import tensorflow as tf
 from scipy.stats import ttest_rel
 from tqdm import tqdm
-import numpy as np
 
 from data import generate_data
 from model import AttentionModel
@@ -43,8 +42,7 @@ def rollout(model, dataset, batch = 1000, disable_tqdm = False):
 	# Evaluate model in greedy mode
 	model.decode_type = 'greedy'
 	costs_list = []
-	# for inputs in tqdm(dataset.batch(batch), disable = disable_tqdm, desc = 'Rollout greedy execution'):
-	for inputs in tqdm(dataset.batch(batch), desc = 'Rollout greedy execution'):
+	for inputs in tqdm(dataset.batch(batch), disable = disable_tqdm, desc = 'Rollout greedy execution'):
 		cost, _ = model(inputs)
 		costs_list.append(cost)
 	return tf.concat(costs_list, axis=0)
@@ -60,9 +58,9 @@ def validate(dataset, model, batch = 1000):
 
 class RolloutBaseline:
 
-	def __init__(self, model, task, weight_dir, n_samples = 10000, 
-				embed_dim = 128, n_customer = 20, warmup_beta = 0.8, from_checkpoint = False,
-				 path_to_checkpoint = None, wp_n_epochs = 1, epoch = 0,
+	def __init__(self, model, task, weight_dir, n_rollout_samples = 10000, 
+				embed_dim = 128, n_customer = 20, warmup_beta = 0.8, wp_epochs = 1, 
+				from_checkpoint = False, path_to_checkpoint = None, epoch = 0,
 				):
 		"""
 		Args:
@@ -70,15 +68,15 @@ class RolloutBaseline:
 			task: suffix for baseline checkpoint task
 			from_checkpoint: start from checkpoint flag
 			path_to_checkpoint: path to baseline model weights
-			wp_n_epochs: until when epoch reaches wp_n_epocohs do we warm-up
+			wp_epochs: until when epoch reaches wp_n_epocohs do we warm-up
 			epoch: current epoch number
-			n_samples: number of samples to be generated for baseline dataset
+			n_rollout_samples: number of samples to be generated for baseline dataset
 			warmup_beta: warmup mixing parameter (exp. exponential moving average parameter)
 		"""
 
-		self.n_samples = n_samples
+		self.n_rollout_samples = n_rollout_samples
 		self.cur_epoch = epoch
-		self.wp_n_epochs = wp_n_epochs
+		self.wp_epochs = wp_epochs
 		self.beta = warmup_beta
 
 		# controls the amount of warmup
@@ -114,7 +112,7 @@ class RolloutBaseline:
 			# For checkpoint
 			self.model.save_weights('%s%s_epoch%s.h5'%(self.weight_dir, self.task, epoch), save_format = 'h5')
 		# We generate a new dataset for baseline model on each baseline update to prevent possible overfitting
-		self.dataset = generate_data(n_samples = self.n_samples, n_customer = self.n_customer)
+		self.dataset = generate_data(n_samples = self.n_rollout_samples, n_customer = self.n_customer)
 		
 		print(f'Evaluating baseline model on baseline dataset (epoch = {epoch})')
 		self.bl_vals = rollout(self.model, self.dataset)
@@ -183,6 +181,6 @@ class RolloutBaseline:
 
 		# alpha controls the amount of warmup
 		if self.alpha < 1.0:
-			self.alpha = (self.cur_epoch + 1) / float(self.wp_n_epochs)
+			self.alpha = (self.cur_epoch + 1) / float(self.wp_epochs)
 			print(f'alpha was updated to {self.alpha}')
 
