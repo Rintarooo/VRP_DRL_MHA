@@ -30,14 +30,14 @@ def train(cfg, log_path = None):
 				b = tf.stop_gradient(b)
 				loss = tf.reduce_mean((L - b) * logp)
 				L_mean = tf.reduce_mean(L)
-			grad = tape.gradient(loss, model.trainable_weights)# model.trainable_weights == thita
-			grad, _ = tf.clip_by_global_norm(grad, 1.0)
-			optimizer.apply_gradients(zip(grad, model.trainable_weights))# optimizer.step
+			grads = tape.gradient(loss, model.trainable_weights)# model.trainable_weights == thita
+			grads, _ = tf.clip_by_global_norm(grads, 1.0)
+			optimizer.apply_gradients(zip(grads, model.trainable_weights))# optimizer.step
 
 			ave_loss.update_state(loss)
 			ave_L.update_state(L_mean)
 			if t%(cfg.batch_steps*0.1) == 0:
-				print('epoch%d, %d/%dsamples: loss %1.2f, average L %1.2f, baseline average b %1.2f\n'%(
+				print('epoch%d, %d/%dsamples: loss %1.2f, average L %1.2f, average b %1.2f\n'%(
 						epoch, t*cfg.batch, cfg.n_samples, ave_loss.result().numpy(), ave_L.result().numpy(), tf.reduce_mean(b)))
 
 		baseline.epoch_callback(model, epoch)

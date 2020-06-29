@@ -113,10 +113,12 @@ if __name__ == '__main__':
 	model = AttentionModel(decode_type = 'sampling')
 	pretrained = load_model(file_parser().path)
 	dataset = generate_data(n_customer = 20)
-	for i, data in enumerate(dataset.batch(4)):
-		_, _, pi = model(data, return_pi = True)
-		get_journey(data, pi, 'untrained model')
-		_, _, pi = pretrained(data, return_pi = True)
-		get_journey(data, pi, 'pretrained model')
+	for i, data in enumerate(dataset.batch(5)):
+		cost, _, pi = model(data, return_pi = True)
+		idx_min = tf.argmin(cost, axis = 0)
+		get_journey(data, pi, 'untrained model', idx_min)
+		cost, _, pi = pretrained(data, return_pi = True)
+		idx_min = tf.argmin(cost, axis = 0)
+		get_journey(data, pi, 'pretrained model', idx_min)
 		if i == 0:
 			break

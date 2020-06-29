@@ -10,9 +10,6 @@ class DotProductAttention(tf.keras.layers.Layer):
 
 	def call(self, x, mask = None):
 		Q, K, V = x
-		# print('Q.shape:', Q.shape)
-		# print('K.shape:', K.shape)
-		# print('V.shape:', V.shape)
 		d_k = tf.cast(tf.shape(K)[-1], tf.float32)
 		logits = tf.matmul(Q, K, transpose_b = True) / tf.math.sqrt(d_k)
 		# (batch, seq_len, head_depth) * (batch, head_depth, seq_len)
@@ -63,7 +60,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		return output
 
 if __name__ == '__main__':
-	mha = MultiHeadAttention(n_heads = 8, embed_dim = 128, name = 'MHA')# input_shape[2] = embed_dim = 128
+	mha = MultiHeadAttention(n_heads = 8, embed_dim = 128, name = 'MHA')
 	batch, n_nodes, embed_dim = 5, 21, 128
 	x = tf.random.uniform((batch, n_nodes, embed_dim), dtype = tf.float32)
 	output = mha([x,x,x])
