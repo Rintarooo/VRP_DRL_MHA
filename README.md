@@ -8,12 +8,12 @@ TensorFlow implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https:/
 
 ## Dependencies
 
-・Python > 3.5
-・TensorFlow > 2.0
-・tqdm
-・scipy
-・plotly (only for plotting)
-・matplotlib (only for plotting)
+* Python > 3.5
+* TensorFlow > 2.0
+* tqdm
+* scipy
+* plotly (only for plotting)
+* matplotlib (only for plotting)
 
 
 ## Usage
