@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow.keras.backend as K
 from layers import MultiHeadAttention
 from data import generate_data
 
@@ -8,18 +9,18 @@ class ResidualBlock_BN(tf.keras.layers.Layer):
 		self.MHA = MHA
 		self.BN = BN
 
-	def call(self, x, mask = None):
+	def call(self, x, mask = None, training = True):
 		if mask is None:
-			return self.BN(x + self.MHA(x))
+			return self.BN(x + self.MHA(x), training = training)
 		else:
-			return self.BN(x + self.MHA(x, mask))
+			return self.BN(x + self.MHA(x, mask), training = training)
 
 class SelfAttention(tf.keras.layers.Layer):
 	def __init__(self, MHA, **kwargs):
 		super().__init__(**kwargs)
 		self.MHA = MHA
 
-	def call(self, x, mask=None):
+	def call(self, x, mask = None):
 		return self.MHA([x, x, x], mask=mask)
 
 class AttentionLayer(tf.keras.layers.Layer):
@@ -49,8 +50,8 @@ class AttentionLayer(tf.keras.layers.Layer):
 		args: (batch, n_nodes, embed_dim)
 		return: (batch, n_nodes, embed_dim)
 	"""
-	def call(self, x, mask=None):
-		return self.FF_sublayer(self.MHA_sublayer(x, mask=mask))
+	def call(self, x, mask=None, training = True):
+		return self.FF_sublayer(self.MHA_sublayer(x, mask = mask, training = training), training = training)
 
 class GraphAttentionEncoder(tf.keras.models.Model):
 	def __init__(self, embed_dim = 128, n_heads = 8, n_layers = 3, FF_hidden=512):
@@ -60,7 +61,7 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		self.attention_layers = [AttentionLayer(n_heads, FF_hidden)
 							for _ in range(n_layers)]
 	# @tf.function	
-	def call(self, x, mask=None):
+	def call(self, x, mask=None, training = True):
 		""" x[0] -- depot_xy: (batch, 2) --> embed_depot_xy: (batch, embed_dim)
 			x[1] -- customer_xy: (batch, n_nodes-1, 2)
 			x[2] -- demand: (batch, n_nodes-1)
@@ -72,7 +73,7 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 					   ), axis = 1)
 
 		for layer in self.attention_layers:
-			x = layer(x, mask)# stack attention layers
+			x = layer(x, mask, training)# stack attention layers
 
 		return (x, tf.reduce_mean(x, axis = 1))
 		"""	(node embeddings(= embedding for all nodes), graph embedding(= mean of node embeddings for graph))
@@ -80,15 +81,17 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		"""
 
 if __name__ == '__main__':
+	training = True
+	K.set_learning_phase(training)
 	encoder = GraphAttentionEncoder()
 	dataset = generate_data()
 	for i, data in enumerate(dataset.batch(5)):
-		output = encoder(data)
+		output = encoder(data, training = training)
 		print(output[0].shape)
 		print(output[1].shape)
 		if i == 0:
 			break
-	encoder.summary()
-	for w in encoder.non_trainable_weights:
-		print(w.name)
+	encoder.summary()# available after buliding graph
+	# for w in encoder.non_trainable_weights:
+	# 	print(w.name)
 	

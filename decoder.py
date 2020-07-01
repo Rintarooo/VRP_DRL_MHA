@@ -24,8 +24,8 @@ class Sampler(tf.keras.layers.Layer):
 		super().__init__(**kwargs)
 		self.n_samples = n_samples
 		""" logits: (batch, n_classes)
-			TopKSampler <-- greedy; sample ones with bigger probability
-			CategoricalSampler <-- sampling; randomly sample ones based on probability
+			TopKSampler <-- greedy; sample ones with biggest probability
+			CategoricalSampler <-- sampling; randomly sample ones from possible distribution based on probability
 		"""
 
 class TopKSampler(Sampler):
