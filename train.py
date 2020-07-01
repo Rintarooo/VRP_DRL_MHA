@@ -6,9 +6,20 @@ from model import AttentionModel
 from rollout import RolloutBaseline
 from data import generate_data
 from config import Config, load_pkl, file_parser
-	
+
 def train(cfg, log_path = None):
+
+	def allocate_memory():
+	# https://qiita.com/studio_haneya/items/4dfaf2fb2ac44818e7e0
+	physical_devices = tf.config.experimental.list_physical_devices('GPU')
+	if len(physical_devices) > 0:
+		for k in range(len(physical_devices)):
+			tf.config.experimental.set_memory_growth(physical_devices[k], True)
+			print('memory growth:', tf.config.experimental.get_memory_growth(physical_devices[k]))
+	else:
+		print("Not enough GPU hardware devices available")
 	
+	allocate_memory()
 	model = AttentionModel(cfg.embed_dim, cfg.n_encode_layers, cfg.n_heads, 
 						cfg.tanh_clipping, 'sampling')
 	baseline = RolloutBaseline(model, cfg.task, cfg.weight_dir, cfg.n_rollout_samples, 
