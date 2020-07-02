@@ -14,6 +14,7 @@ def generate_data(n_samples = 10000, n_customer = 20):
 if __name__ == '__main__':
 	dataset = generate_data()
 	# data = next(iter(dataset))
+	data = get_data()
 	
 	for i, data in enumerate(dataset.batch(5)):
 		print(data[0].shape)

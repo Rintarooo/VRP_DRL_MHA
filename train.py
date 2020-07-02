@@ -28,9 +28,11 @@ def train(cfg, log_path = None):
 	ave_loss = tf.keras.metrics.Mean()
 	ave_L = tf.keras.metrics.Mean()
 	
-	for epoch in tqdm(tf.range(cfg.epochs), desc = 'epoch'):
+	for epoch in tqdm(range(cfg.epochs), desc = 'epoch'):
 		t1 = time()
+		print('generate data %dsamples'%(cfg.n_samples))
 		dataset = generate_data(cfg.n_samples, cfg.n_customer)
+		print('done')
 		bs = baseline.eval_all(dataset)
 		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
 		
