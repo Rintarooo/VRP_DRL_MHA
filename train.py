@@ -29,15 +29,14 @@ def train(cfg, log_path = None):
 	ave_L = tf.keras.metrics.Mean()
 	
 	for epoch in tqdm(range(cfg.epochs), desc = 'epoch'):
-		print('\ngenerate data %dsamples'%(cfg.n_samples))
+		print('\ngenerate %dsamples'%(cfg.n_samples))
 		dataset = generate_data(cfg.n_samples, cfg.n_customer)
 		print('done')
 		bs = baseline.eval_all(dataset)
 		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
+		t1 = time()
 		model.decode_type = 'sampling'# change
 		for t, inputs in enumerate(dataset.batch(cfg.batch)):
-			t1 = time()
-			print('time')
 			with tf.GradientTape() as tape:
 				L, logp = model(inputs, training = True)
 				b = bs[t] if bs is not None else baseline.eval(inputs, L)
@@ -61,6 +60,7 @@ def train(cfg, log_path = None):
 					with open(log_path, 'a') as f:
 						t2 = time()
 						f.write('%dmin%dsec,%d,%d,%1.2f,%1.2f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t*cfg.batch, ave_loss.result().numpy(), ave_L.result().numpy()))
+						t1 = time()
 			ave_loss.reset_states()
 			ave_L.reset_states()
 
