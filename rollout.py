@@ -32,7 +32,7 @@ def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
 					tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
 						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
 					)
-
+	
 	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers, decode_type = 'greedy')
 	_, _ = model_loaded(data_random)
 	model_loaded.load_weights(path)

@@ -32,6 +32,7 @@ class AttentionModel(tf.keras.Model):
 		context = tf.concat((graph_embedding[:,None,:], prev_node_embedding, D[:,:,None]), axis=-1)
 		return mask, context
 
+	@tf.function
 	def create_context(self, node_embeddings, graph_embbedding):
 		D_t1 = tf.ones([self.batch, 1], dtype = tf.float32)
 		depot_idx = tf.zeros([self.batch, 1], dtype = tf.int32)
@@ -46,6 +47,7 @@ class AttentionModel(tf.keras.Model):
 		# [True] --> np.inf, [False] --> logits
 		return tf.concat([mask_depot, mask_customer], axis = 1)
 
+	# @tf.function
 	def call(self, x, return_pi=False):
 		""" node_embeddings: (batch, n_nodes, embed_dim)
 			graph_embedding: (batch, embed_dim)
@@ -70,7 +72,6 @@ class AttentionModel(tf.keras.Model):
 				context = self.create_context(node_embeddings, graph_embedding)
 
 			while not self.env.partial_visited():
-
 				# compute MHA decoder vectors for current mask
 				logits = self.decoder([context, node_embeddings], mask)
 				# logits: (batch, 1, n_nodes), logits denotes the value before going into softmax 

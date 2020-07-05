@@ -21,7 +21,7 @@ class SelfAttention(tf.keras.layers.Layer):
 		self.MHA = MHA
 
 	def call(self, x, mask = None):
-		return self.MHA([x, x, x], mask=mask)
+		return self.MHA([x, x, x], mask = mask)
 
 class AttentionLayer(tf.keras.layers.Layer):
 	def __init__(self, n_heads = 8, FF_hidden = 512, activation = 'relu', **kwargs):
@@ -60,8 +60,9 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		self.init_W = tf.keras.layers.Dense(embed_dim)# torch.nn.Linear(3, embedding_dim)
 		self.attention_layers = [AttentionLayer(n_heads, FF_hidden)
 							for _ in range(n_layers)]
-	# @tf.function	
-	def call(self, x, mask=None, training = True):
+	
+	@tf.function
+	def call(self, x, mask = None, training = True):
 		""" x[0] -- depot_xy: (batch, 2) --> embed_depot_xy: (batch, embed_dim)
 			x[1] -- customer_xy: (batch, n_nodes-1, 2)
 			x[2] -- demand: (batch, n_nodes-1)
@@ -71,10 +72,10 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		x = tf.concat((self.init_W_depot(x[0])[:, None, :],
 					   self.init_W(tf.concat((x[1], x[2][:, :, None]), axis=-1))
 					   ), axis = 1)
-
+	
 		for layer in self.attention_layers:
 			x = layer(x, mask, training)# stack attention layers
-
+		
 		return (x, tf.reduce_mean(x, axis = 1))
 		"""	(node embeddings(= embedding for all nodes), graph embedding(= mean of node embeddings for graph))
 			=((batch, n_nodes, embed_dim), (batch, embed_dim))

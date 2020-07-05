@@ -13,6 +13,7 @@ class DecoderCell(tf.keras.layers.Layer):
 		self.final_attention_layer = DotProductAttention(return_logits = True, clip = self.clip)
 		super().build(input_shape)
 
+	@tf.function
 	def call(self, inputs, mask = None):
 		context, nodes = inputs
 		query = self.prep_attention_layer([context, nodes, nodes], mask = mask)
@@ -29,10 +30,12 @@ class Sampler(tf.keras.layers.Layer):
 		"""
 
 class TopKSampler(Sampler):
+	@tf.function
 	def call(self, logits):
 		return tf.math.top_k(logits, self.n_samples).indices
 
 class CategoricalSampler(Sampler):
+	@tf.function
 	def call(self, logits):
 		return tf.random.categorical(logits, self.n_samples, dtype = tf.int32)
 
@@ -44,7 +47,7 @@ if __name__ == '__main__':
 	decoder = DecoderCell()
 	logits = decoder([context, nodes], mask)
 	print(logits.shape)# logits: (batch, 1, n_nodes), logits denotes the value before going into softmax
-	sampler = TopKSampler() 
+	sampler = CategoricalSampler() 
 	next_node = sampler(tf.squeeze(logits, axis = 1))
 	print(next_node.shape)# next node: (batch, 1)
 	

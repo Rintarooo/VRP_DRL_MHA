@@ -80,7 +80,7 @@ def get_journey(data, pi, title, idx_in_batch = 0):
 	trace_points = go.Scatter(x = points_coords[:, 0],
 							  y = points_coords[:, 1],
 							  mode = 'markers+text',
-							  name = 'destinations',
+							  name = 'customer',
 							  text = node_labels,
 							  textposition = 'top center',
 							  marker = dict(size = 7),
@@ -113,12 +113,11 @@ if __name__ == '__main__':
 	model = AttentionModel(decode_type = 'sampling')
 	pretrained = load_model(file_parser().path)
 	dataset = generate_data(n_customer = 20)
-	for i, data in enumerate(dataset.batch(5)):
-		cost, _, pi = model(data, return_pi = True)
-		idx_min = tf.argmin(cost, axis = 0)
-		get_journey(data, pi, 'untrained model', idx_min)
+	for i, data in enumerate(dataset.batch(10)):
 		cost, _, pi = pretrained(data, return_pi = True)
 		idx_min = tf.argmin(cost, axis = 0)
 		get_journey(data, pi, 'pretrained model', idx_min)
+		cost, _, pi = model(data, return_pi = True)
+		get_journey(data, pi, 'untrained model', idx_min)
 		if i == 0:
 			break

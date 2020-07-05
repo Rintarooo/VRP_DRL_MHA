@@ -10,8 +10,8 @@ def arg_parser():
 	parser.add_argument('-nc', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
 
 	# train config
-	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 128, help = 'batch size')
-	parser.add_argument('-bs', '--batch_steps', metavar = 'S', type = int, default = 10000, help = 'number of samples = batch * batch_steps')
+	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 256, help = 'batch size')
+	parser.add_argument('-bs', '--batch_steps', metavar = 'S', type = int, default = 5000, help = 'number of samples = batch * batch_steps')
 	parser.add_argument('-nr', '--n_rollout_samples', metavar = 'R', type = int, default = 1000, help = 'baseline rollout number of samples')
 	parser.add_argument('-e', '--epochs', metavar = 'E', type = int, default = 30, help = 'total number of samples = epochs * number of samples')
 	parser.add_argument('-em', '--embed_dim', metavar = 'EM', type = int, default = 128, help = 'embedding size')
