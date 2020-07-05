@@ -37,6 +37,7 @@ def train(cfg, log_path = None):
 		model.decode_type = 'sampling'# change
 		for t, inputs in enumerate(dataset.batch(cfg.batch)):
 			t1 = time()
+			print('time')
 			with tf.GradientTape() as tape:
 				L, logp = model(inputs, training = True)
 				b = bs[t] if bs is not None else baseline.eval(inputs, L)
@@ -51,7 +52,7 @@ def train(cfg, log_path = None):
 			ave_L.update_state(L_mean)
 			if t%(cfg.batch_steps*0.01) == 0:
 				print('epoch%d, %d/%dsamples: loss %1.2f, average L %1.2f, average b %1.2f\n'%(
-						epoch, (t+1)*cfg.batch, cfg.n_samples, ave_loss.result().numpy(), ave_L.result().numpy(), tf.reduce_mean(b)))
+						epoch, t*cfg.batch, cfg.n_samples, ave_loss.result().numpy(), ave_L.result().numpy(), tf.reduce_mean(b)))
 				if cfg.islogger:
 					if log_path is None:
 						log_path = '%s%s_%s.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/
@@ -59,7 +60,7 @@ def train(cfg, log_path = None):
 							f.write('time,epoch,samples,loss,average length\n')
 					with open(log_path, 'a') as f:
 						t2 = time()
-						f.write('%dmin%dsec,%d,%d,%1.2f,%1.2f\n'%((t2-t1)//60, (t2-t1)%60, epoch, (t+1)*cfg.batch, ave_loss.result().numpy(), ave_L.result().numpy()))
+						f.write('%dmin%dsec,%d,%d,%1.2f,%1.2f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t*cfg.batch, ave_loss.result().numpy(), ave_L.result().numpy()))
 			ave_loss.reset_states()
 			ave_L.reset_states()
 
