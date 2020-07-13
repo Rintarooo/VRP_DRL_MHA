@@ -16,8 +16,8 @@ def copy_model(model, embed_dim = 128, n_customer = 20):
 						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
 					)
 
-	new_model = AttentionModel(embed_dim, decode_type = 'sampling')
-	_, _ = new_model(data_random)
+	new_model = AttentionModel(embed_dim)
+	_, _ = new_model(data_random, decode_type = 'sampling')
 	for a, b in zip(new_model.variables, model.variables):
 		a.assign(b)# copies the weigths variables of model_b into model_a
 	return new_model
@@ -33,17 +33,16 @@ def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
 						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
 					)
 	
-	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers, decode_type = 'greedy')
-	_, _ = model_loaded(data_random)
+	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
+	_, _ = model_loaded(data_random, decode_type = 'greedy')
 	model_loaded.load_weights(path)
 	return model_loaded
 
 def rollout(model, dataset, batch = 1000, disable_tqdm = False):
 	# Evaluate model in greedy mode
-	model.decode_type = 'greedy'
 	costs_list = []
 	for inputs in tqdm(dataset.batch(batch), disable = disable_tqdm, desc = 'Rollout greedy execution'):
-		cost, _ = model(inputs)
+		cost, _ = model(inputs, decode_type = 'greedy')
 		costs_list.append(cost)
 	return tf.concat(costs_list, axis=0)
 
@@ -51,7 +50,6 @@ def validate(dataset, model, batch = 1000):
 	"""Validates model on given dataset in greedy mode
 	"""
 	val_costs = rollout(model, dataset, batch = batch)
-	model.decode_type = 'sampling'
 	mean_cost = tf.reduce_mean(val_costs)
 	print(f"Validation score: {np.round(mean_cost, 4)}")
 	return mean_cost
@@ -139,7 +137,7 @@ class RolloutBaseline:
 		else:
 			v_ema = 0.0
 
-		v_b, _ = self.model(batch)
+		v_b, _ = self.model(batch, decode_type = 'greedy')
 
 		v_b = tf.stop_gradient(v_b)
 		v_ema = tf.stop_gradient(v_ema)
@@ -166,7 +164,7 @@ class RolloutBaseline:
 		candidate_vals = rollout(model, self.dataset)# costs for training model on baseline dataset
 		candidate_mean = tf.reduce_mean(candidate_vals)
 
-		print(f'Epoch {self.cur_epoch} baseline mean {self.mean}, candidate mean {candidate_mean}')
+		print(f'Epoch {self.cur_epoch} candidate mean {candidate_mean}, baseline mean {self.mean}')
 
 		if candidate_mean < self.mean:
 			# statistic + p-value

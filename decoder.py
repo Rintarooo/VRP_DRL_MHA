@@ -8,16 +8,16 @@ class DecoderCell(tf.keras.layers.Layer):
 		self.clip = clip
 
 	def build(self, input_shape):
-		context_shape, nodes_shape = input_shape
-		self.prep_attention_layer = MultiHeadAttention(n_heads = self.n_heads, embed_dim = nodes_shape[2])
+		context_shape, node_embeddings_shape = input_shape
+		self.prep_attention_layer = MultiHeadAttention(n_heads = self.n_heads, embed_dim = node_embeddings_shape[2])
 		self.final_attention_layer = DotProductAttention(return_logits = True, clip = self.clip)
 		super().build(input_shape)
 
 	@tf.function
 	def call(self, inputs, mask = None):
-		context, nodes = inputs
-		query = self.prep_attention_layer([context, nodes, nodes], mask = mask)
-		logits = self.final_attention_layer([query, nodes, nodes], mask = mask)
+		context, node_embeddings = inputs
+		query = self.prep_attention_layer([context, node_embeddings, node_embeddings], mask = mask)
+		logits = self.final_attention_layer([query, node_embeddings, node_embeddings], mask = mask)
 		return logits
 
 class Sampler(tf.keras.layers.Layer):
@@ -30,12 +30,10 @@ class Sampler(tf.keras.layers.Layer):
 		"""
 
 class TopKSampler(Sampler):
-	@tf.function
 	def call(self, logits):
 		return tf.math.top_k(logits, self.n_samples).indices
 
 class CategoricalSampler(Sampler):
-	@tf.function
 	def call(self, logits):
 		return tf.random.categorical(logits, self.n_samples, dtype = tf.int32)
 

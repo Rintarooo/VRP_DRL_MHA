@@ -8,7 +8,7 @@ from env import AgentVRP
 class AttentionModel(tf.keras.Model):
 
 	def __init__(self, embed_dim = 128, n_encode_layers=3,
-				 n_heads = 8, tanh_clipping=10., decode_type = 'greedy'):
+				 n_heads = 8, tanh_clipping=10.):
 
 		super().__init__()
 		head_depth = embed_dim // n_heads
@@ -18,21 +18,19 @@ class AttentionModel(tf.keras.Model):
 		self.AgentClass = AgentVRP
 		self.encoder = GraphAttentionEncoder(embed_dim = embed_dim, n_heads = n_heads, n_layers = n_encode_layers)
 		self.decoder = DecoderCell(n_heads = n_heads, clip = tanh_clipping)
-		self.selecter = {'greedy': TopKSampler(),
-						'sampling': CategoricalSampler()}.get(decode_type, None)
-		assert self.selecter is not None, 'decode_type: greedy or sampling'
-
+		
 	def update_context_and_mask(self, next_node, node_embeddings, graph_embedding):
-		one_hot = tf.one_hot(indices = next_node, depth = self.n_nodes)
-		# next_node: (batch, 1) tf.int32, range[0, n_nodes-1]--> one_hot: (batch, 1, n_nodes)		
+		""" next_node **includes depot** : (batch, 1) tf.int32, range[0, n_nodes-1]
+			--> one_hot: (batch, 1, n_nodes)
+			prev_node_embedding: (batch, 1, embed_dim)
+		"""
+		one_hot = tf.one_hot(indices = next_node, depth = self.n_nodes)		
 		visited_mask = tf.transpose(tf.cast(one_hot, dtype = tf.bool), (0,2,1))
-		mask, D = self.env.think_capacity(next_node, visited_mask)
+		mask, D = self.env.get_mask_D(next_node, visited_mask)
 		prev_node_embedding = tf.matmul(one_hot, node_embeddings)
-		# prev_node_embedding: (batch, 1, embed_dim)
-		context = tf.concat((graph_embedding[:,None,:], prev_node_embedding, D[:,:,None]), axis=-1)
+		context = tf.concat([graph_embedding[:,None,:], prev_node_embedding, D[:,:,None]], axis=-1)
 		return mask, context
 
-	@tf.function
 	def create_context(self, node_embeddings, graph_embbedding):
 		D_t1 = tf.ones([self.batch, 1], dtype = tf.float32)
 		depot_idx = tf.zeros([self.batch, 1], dtype = tf.int32)
@@ -47,13 +45,20 @@ class AttentionModel(tf.keras.Model):
 		# [True] --> np.inf, [False] --> logits
 		return tf.concat([mask_depot, mask_customer], axis = 1)
 
-	# @tf.function
-	def call(self, x, return_pi=False):
+	def get_log_likelihood(self, _log_p, pi):
+		# Get log_p corresponding to selected actions
+		log_p = tf.gather_nd(_log_p, tf.expand_dims(pi, axis = -1), batch_dims = 2)
+		return tf.reduce_sum(log_p, 1)
+
+	def call(self, x, return_pi = False, decode_type = 'greedy'):
 		""" node_embeddings: (batch, n_nodes, embed_dim)
 			graph_embedding: (batch, embed_dim)
 			mask: (batch, n_nodes, 1)
 			context: (batch, 1, 2*embed_dim+1)
 		"""
+		self.selecter = {'greedy': TopKSampler(),
+						'sampling': CategoricalSampler()}.get(decode_type, None)
+
 		node_embeddings, graph_embedding = self.encoder(x)
 		self.batch, self.n_nodes, _ = tf.shape(node_embeddings)
 		mask = self.create_mask()
@@ -61,15 +66,8 @@ class AttentionModel(tf.keras.Model):
 		log_ps, tours = [], []
 		self.env = self.AgentClass(x)
 
-		# Perform decoding steps
-		i = 0
 		#tf.while_loop
 		while not self.env.all_visited():
-
-			if i > 0:
-				self.env.reset()
-				node_embeddings, graph_embedding = self.encoder(x, mask)
-				context = self.create_context(node_embeddings, graph_embedding)
 
 			while not self.env.partial_visited():
 				# compute MHA decoder vectors for current mask
@@ -79,15 +77,22 @@ class AttentionModel(tf.keras.Model):
 				# next_node: (batch, 1), minval = 0, maxval = n_nodes-1, dtype = tf.int32
 				mask, context = self.update_context_and_mask(next_node, node_embeddings, graph_embedding)
 				
-				log_p = tf.nn.log_softmax(logits, axis = -1)# log(exp(x_i) / exp(x).sum())
-				# log_p: (batch, 1, n_nodes) <-- logits: (batch, 1, n_nodes)
+				log_p = tf.nn.log_softmax(tf.squeeze(logits, axis = 1), axis = -1)# log(exp(x_i) / exp(x).sum())
+				# log_p: (batch, n_nodes) <-- logits **squeezed**: (batch, n_nodes)
 				tours.append(tf.squeeze(next_node, axis = 1))
-				log_ps.append(tf.gather(tf.squeeze(log_p, axis = 1), indices = next_node, batch_dims = 1))
-			# print(i)
-			i += 1
+				
+				# log_ps.append(tf.gather(log_p, indices = next_node, batch_dims = 1))
+				log_ps.append(log_p)
+			
+			self.env.reset()
+			node_embeddings, graph_embedding = self.encoder(x, mask)
+			context = self.create_context(node_embeddings, graph_embedding)
 
 		pi = tf.stack(tours, 1)
-		ll = tf.squeeze(tf.reduce_sum(tf.stack(log_ps, 0), 0), axis = 1)
+		
+		# ll = tf.squeeze(tf.reduce_sum(tf.stack(log_ps, 0), 0), axis = 1)
+		ll = self.get_log_likelihood(tf.stack(log_ps, 1), pi)
+		
 		cost = self.env.get_costs(pi)
 		if return_pi:
 			return cost, ll, pi
@@ -95,10 +100,9 @@ class AttentionModel(tf.keras.Model):
 		
 if __name__ == '__main__':
 	model = AttentionModel()
-	model.decode_type = 'sampling'
-	dataset = generate_data()
+	dataset = generate_data(seed = 123)
 	for i, data in enumerate(dataset.batch(4)):
-		output = model(data, return_pi = True)
+		output = model(data, decode_type = 'sampling', return_pi = True)
 		print(output[0])# cost: (batch,)
 		print(output[1])# ll: (batch,)
 		print(output[2])# pi: (batch, decode_step) # tour

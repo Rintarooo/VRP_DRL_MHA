@@ -9,11 +9,10 @@ class DotProductAttention(tf.keras.layers.Layer):
 		self.inf = inf
 
 	def call(self, x, mask = None):
+		# https://qiita.com/halhorn/items/c91497522be27bde17ce
 		Q, K, V = x
 		d_k = tf.cast(tf.shape(K)[-1], tf.float32)
 		logits = tf.matmul(Q, K, transpose_b = True) / tf.math.sqrt(d_k)
-		# (batch, seq_len, head_depth) * (batch, head_depth, seq_len)
-		# = (batch, seq_len, seq_len)
 		if self.clip is not None:
 			logits = self.clip * tf.tanh(logits)
 		if mask is not None:
@@ -23,7 +22,7 @@ class DotProductAttention(tf.keras.layers.Layer):
 			"""
 		if self.return_logits:
 			return logits
-		probs = tf.nn.softmax(logits, axis = -1)
+		probs = tf.nn.softmax(logits)
 		return tf.matmul(probs, V)
 
 class MultiHeadAttention(tf.keras.layers.Layer):
@@ -48,9 +47,9 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 	
 	def call(self, x, mask = None):
 		"""	q, k, v = x
-			encoder x: [x, x, x]
+			encoder arg x: [x, x, x]
 			shape of q: (batch, n_nodes, embed_dim)
-			output: (batch, n_nodes, embed_dim)
+			return output: (batch, n_nodes, embed_dim)
 		"""
 		q, k, v = x
 		output = [attention([Wq(q), Wk(k), Wv(v)], mask = mask)

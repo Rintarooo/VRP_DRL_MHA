@@ -47,7 +47,7 @@ class AttentionLayer(tf.keras.layers.Layer):
 		super().build(input_shape)
 	
 	"""	def call
-		args: (batch, n_nodes, embed_dim)
+		arg x: (batch, n_nodes, embed_dim)
 		return: (batch, n_nodes, embed_dim)
 	"""
 	def call(self, x, mask=None, training = True):
