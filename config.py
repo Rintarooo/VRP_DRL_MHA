@@ -12,7 +12,7 @@ def arg_parser():
 	# train config
 	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 512, help = 'batch size')
 	parser.add_argument('-bs', '--batch_steps', metavar = 'BS', type = int, default = 2500, help = 'number of samples = batch * batch_steps')
-	parser.add_argument('-bv', '--batch_verbose', metavar = 'BV', type = int, default = 25, help = 'print and logging during training process')
+	parser.add_argument('-bv', '--batch_verbose', metavar = 'BV', type = int, default = 50, help = 'print and logging during training process')
 	parser.add_argument('-nr', '--n_rollout_samples', metavar = 'R', type = int, default = 10000, help = 'baseline rollout number of samples')
 	parser.add_argument('-e', '--epochs', metavar = 'E', type = int, default = 30, help = 'total number of samples = epochs * number of samples')
 	parser.add_argument('-em', '--embed_dim', metavar = 'EM', type = int, default = 128, help = 'embedding size')

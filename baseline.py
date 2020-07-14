@@ -101,14 +101,12 @@ class RolloutBaseline:
 		# Load or copy baseline model based on self.from_checkpoint condition
 		if self.from_checkpoint and self.alpha == 0:
 			print('Baseline model loaded')
-			self.model = load_model(self.path_to_checkpoint,
-									   embed_dim = self.embed_dim,
-									   n_customer = self.n_customer)
+			self.model = load_model(self.path_to_checkpoint, embed_dim = self.embed_dim, n_customer = self.n_customer)
 		else:
+			print('Baseline model copied')
 			self.model = copy_model(model, embed_dim = self.embed_dim, n_customer = self.n_customer)
-
 			# For checkpoint
-			self.model.save_weights('%s%s_epoch%s.h5'%(self.weight_dir, self.task, epoch), save_format = 'h5')
+			self.model.save_weights('%s%s_baseline_epoch%s.h5'%(self.weight_dir, self.task, epoch), save_format = 'h5')
 		# We generate a new dataset for baseline model on each baseline update to prevent possible overfitting
 		self.dataset = generate_data(n_samples = self.n_rollout_samples, n_customer = self.n_customer)
 		

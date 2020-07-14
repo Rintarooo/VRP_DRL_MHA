@@ -3,7 +3,7 @@ from tqdm import tqdm
 from time import time
 
 from model import AttentionModel
-from rollout import RolloutBaseline
+from baseline import RolloutBaseline
 from data import generate_data
 from config import Config, load_pkl, file_parser
 
@@ -19,11 +19,21 @@ def train(cfg, log_path = None):
 		else:
 			print("Not enough GPU hardware devices available")
 
-	
+	def rein_loss(model, inputs, bs, t):
+		L, ll = model(inputs, decode_type = 'sampling', training = True)
+		b = bs[t] if bs is not None else baseline.eval(inputs, L)
+		b = tf.stop_gradient(b)
+		return tf.reduce_mean((L - b) * ll), tf.reduce_mean(L)
+
+	def grad_func(model, inputs, bs, t):
+		with tf.GradientTape() as tape:
+			loss, L_mean = rein_loss(model, inputs, bs, t)
+		return loss, L_mean, tape.gradient(loss, model.trainable_weights)# model.trainable_weights == thita
+
 	allocate_memory()
 	model = AttentionModel(cfg.embed_dim, cfg.n_encode_layers, cfg.n_heads, cfg.tanh_clipping)
 	baseline = RolloutBaseline(model, cfg.task, cfg.weight_dir, cfg.n_rollout_samples, 
-								cfg.embed_dim, cfg.n_customer, cfg.warmup_beta, cfg.wp_epochs)
+							cfg.embed_dim, cfg.n_customer, cfg.warmup_beta, cfg.wp_epochs)
 	optimizer = tf.keras.optimizers.Adam(learning_rate = cfg.lr)
 	ave_loss = tf.keras.metrics.Mean()
 	ave_L = tf.keras.metrics.Mean()
@@ -31,19 +41,14 @@ def train(cfg, log_path = None):
 	for epoch in range(cfg.epochs):
 		dataset = generate_data(cfg.n_samples, cfg.n_customer)
 		
-		bs = baseline.eval_all(dataset)
-		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
+		# bs = baseline.eval_all(dataset)
+		# bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
 		
 		t1 = time()
 		for t, inputs in enumerate(dataset.batch(cfg.batch)):
-			with tf.GradientTape() as tape:
-				L, ll = model(inputs, decode_type = 'sampling', training = True)
-				b = bs[t] if bs is not None else baseline.eval(inputs, L)
-				b = tf.stop_gradient(b)
-				loss = tf.reduce_mean((L - b) * ll)
-				L_mean = tf.reduce_mean(L)
-			grads = tape.gradient(loss, model.trainable_weights)# model.trainable_weights == thita
 			
+			loss, L_mean, grads = grad_func(model, inputs, bs, t)
+		
 			grads, _ = tf.clip_by_global_norm(grads, 1.0)
 			optimizer.apply_gradients(zip(grads, model.trainable_weights))# optimizer.step
 			
@@ -62,6 +67,7 @@ def train(cfg, log_path = None):
 					with open(log_path, 'a') as f:
 						f.write('%dmin%dsec,%d,%d,%1.2f,%1.2f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss.result().numpy(), ave_L.result().numpy()))
 				t1 = time()
+
 			ave_loss.reset_states()
 			ave_L.reset_states()
 

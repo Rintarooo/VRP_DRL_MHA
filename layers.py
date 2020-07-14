@@ -13,6 +13,7 @@ class DotProductAttention(tf.keras.layers.Layer):
 		Q, K, V = x
 		d_k = tf.cast(tf.shape(K)[-1], tf.float32)
 		logits = tf.matmul(Q, K, transpose_b = True) / tf.math.sqrt(d_k)
+		
 		if self.clip is not None:
 			logits = self.clip * tf.tanh(logits)
 		if mask is not None:
@@ -22,7 +23,7 @@ class DotProductAttention(tf.keras.layers.Layer):
 			"""
 		if self.return_logits:
 			return logits
-		probs = tf.nn.softmax(logits)
+		probs = tf.nn.softmax(logits, axis = -1)
 		return tf.matmul(probs, V)
 
 class MultiHeadAttention(tf.keras.layers.Layer):
