@@ -41,8 +41,8 @@ def train(cfg, log_path = None):
 	for epoch in range(cfg.epochs):
 		dataset = generate_data(cfg.n_samples, cfg.n_customer)
 		
-		# bs = baseline.eval_all(dataset)
-		# bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
+		bs = baseline.eval_all(dataset)
+		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
 		
 		t1 = time()
 		for t, inputs in enumerate(dataset.batch(cfg.batch)):
