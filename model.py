@@ -75,6 +75,7 @@ class AttentionModel(tf.keras.Model):
 	def get_log_likelihood(self, _log_p, pi):
 		# Get log_p corresponding to selected actions
 		log_p = tf.gather_nd(_log_p, tf.expand_dims(pi, axis = -1), batch_dims = 2)
+		# print(log_p)
 		return tf.reduce_sum(log_p, 1)
 
 	def get_costs(self, pi):
@@ -108,7 +109,7 @@ class AttentionModel(tf.keras.Model):
 		self.selecter = {'greedy': TopKSampler(),
 						'sampling': CategoricalSampler()}.get(decode_type, None)
 
-	# @tf.function
+	# @tf.function #(autograph = False)
 	def call(self, x, return_pi = False, decode_type = 'greedy'):
 		""" node_embeddings: (batch, n_nodes, embed_dim)
 			graph_embedding: (batch, embed_dim)
@@ -124,7 +125,6 @@ class AttentionModel(tf.keras.Model):
 
 		mask, context, D = self.create_context_mask_t1(node_embeddings, graph_embedding) 
 		log_ps = tf.TensorArray(dtype = self.decoder.dtype, size = 0, dynamic_size = True, element_shape = (self.batch, self.n_nodes))
-		# tf.float32
 		tours = tf.TensorArray(dtype = tf.int32, size = 0, dynamic_size = True, element_shape = (self.batch,))
 		
 		#tf.while_loop
@@ -151,7 +151,7 @@ if __name__ == '__main__':
 	# tf.config.experimental_run_functions_eagerly(True)
 	model = AttentionModel()
 	dataset = generate_data(seed = 123)
-	for i, data in enumerate(dataset.batch(10)):
+	for i, data in enumerate(dataset.batch(30)):
 		output = model(data, decode_type = 'sampling', return_pi = True)
 		print(output[0])# cost: (batch,)
 		print(output[1])# ll: (batch,)
@@ -159,8 +159,11 @@ if __name__ == '__main__':
 		if i == 0:
 			break
 
-	# print('model.trainable_weights')
-	# for w in model.trainable_weights:
-	# 	print(w.name)
+	print('model.trainable_weights')
+	for w in model.trainable_weights:
+		print(w.name)
+		print(w.numpy())
+
+	# initializer = tf.keras.initializers.RandomUniform(minval=0., maxval=1.)
 	model.summary()
 

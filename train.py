@@ -56,9 +56,8 @@ def train(cfg, log_path = None):
 			ave_L.update_state(L_mean)
 			
 			if t%(cfg.batch_verbose) == 0:
-				print('Epoch %d (batch = %d): Loss: %1.2f L: %1.2f'%(epoch, t, ave_loss.result().numpy(), ave_L.result().numpy()))
 				t2 = time()
-				print('%dmin%dsec'%((t2-t1)//60, (t2-t1)%60))
+				print('Epoch %d (batch = %d): Loss: %1.2f L: %1.2f, %dmin%dsec'%(epoch, t, ave_loss.result().numpy(), ave_L.result().numpy(), (t2-t1)//60, (t2-t1)%60))
 				if cfg.islogger:
 					if log_path is None:
 						log_path = '%s%s_%s.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/

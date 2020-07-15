@@ -25,7 +25,7 @@ def generate_data(n_samples = 10000, n_customer = 20, seed = None):
 					dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)]
 	
 	return tf.data.Dataset.from_tensor_slices(tuple(tf_rand()))
-
+	
 if __name__ == '__main__':
 	dataset = generate_data(n_samples = 1280000, n_customer = 100, seed = 123)
 	# data = next(iter(dataset))
