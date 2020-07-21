@@ -7,6 +7,8 @@ from baseline import RolloutBaseline
 from data import generate_data
 from config import Config, load_pkl, file_parser
 
+# https://www.wandb.com/articles/wandb-customizing-training-loops-in-tensorflow-2
+
 def train(cfg, log_path = None):
 
 	def allocate_memory():
@@ -28,7 +30,7 @@ def train(cfg, log_path = None):
 	def grad_func(model, inputs, bs, t):
 		with tf.GradientTape() as tape:
 			loss, L_mean = rein_loss(model, inputs, bs, t)
-		return loss, L_mean, tape.gradient(loss, model.trainable_weights)# model.trainable_weights == thita
+		return loss, L_mean, tape.gradient(loss, model.trainable_variables)# model.trainable_variables == thita
 
 	allocate_memory()
 	model = AttentionModel(cfg.embed_dim, cfg.n_encode_layers, cfg.n_heads, cfg.tanh_clipping)
@@ -50,7 +52,7 @@ def train(cfg, log_path = None):
 			loss, L_mean, grads = grad_func(model, inputs, bs, t)
 		
 			grads, _ = tf.clip_by_global_norm(grads, 1.0)
-			optimizer.apply_gradients(zip(grads, model.trainable_weights))# optimizer.step
+			optimizer.apply_gradients(zip(grads, model.trainable_variables))# optimizer.step
 			
 			ave_loss.update_state(loss)
 			ave_L.update_state(L_mean)

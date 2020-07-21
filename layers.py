@@ -9,7 +9,6 @@ class DotProductAttention(tf.keras.layers.Layer):
 		self.inf = inf
 
 	def call(self, x, mask = None):
-		# https://qiita.com/halhorn/items/c91497522be27bde17ce
 		Q, K, V = x
 		d_k = tf.cast(tf.shape(K)[-1], tf.float32)
 		logits = tf.matmul(Q, K, transpose_b = True) / tf.math.sqrt(d_k)
@@ -36,28 +35,31 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		if self.embed_dim % self.n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 
-		self.Wq = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # torch.nn.Linear(embed_dim, d_q(=head_depth))
-		self.Wk = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # (embed_dim, d_k)
-		self.Wv = tf.keras.layers.Dense(self.head_depth, use_bias=False)  # (embed_dim, d_v)		
+		# init = tf.random_uniform_initializer(minval = -1./tf.math.sqrt(tf.cast(embed_dim, tf.float32)), maxval= 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32)), seed=None)
+		init = tf.keras.initializers.RandomUniform(minval = -1./tf.math.sqrt(tf.cast(embed_dim, tf.float32)), maxval = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32)))
+
+		self.Wq = tf.keras.layers.Dense(self.head_depth, use_bias = False, kernel_initializer = init, bias_initializer = init)  # torch.nn.Linear(embed_dim, d_q(=head_depth))
+		self.Wk = tf.keras.layers.Dense(self.head_depth, use_bias = False, kernel_initializer = init, bias_initializer = init)  # (embed_dim, d_k)
+		self.Wv = tf.keras.layers.Dense(self.head_depth, use_bias = False, kernel_initializer = init, bias_initializer = init)  # (embed_dim, d_v)		
 		self.Wq_layers = [self.Wq for _ in range(n_heads)]
 		self.Wk_layers = [self.Wk for _ in range(n_heads)]
 		self.Wv_layers = [self.Wv for _ in range(n_heads)]
 		self.attentions = [DotProductAttention() for _ in range(n_heads)]
 		self.concat = tf.keras.layers.Concatenate(axis = -1)
-		self.Wo = tf.keras.layers.Dense(self.embed_dim, use_bias=False)# (embed_dim, embed_dim)
+		self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init, bias_initializer = init)# (embed_dim, embed_dim)
 	
 	def call(self, x, mask = None):
 		"""	q, k, v = x
 			encoder arg x: [x, x, x]
 			shape of q: (batch, n_nodes, embed_dim)
+			output[0] - output[h_heads-1]: (batch, n_nodes, head_depth)
+			--> concat output: (batch, n_nodes, head_depth * h_heads)
 			return output: (batch, n_nodes, embed_dim)
 		"""
 		q, k, v = x
 		output = [attention([Wq(q), Wk(k), Wv(v)], mask = mask)
 			for attention, Wq, Wk, Wv in zip(self.attentions, self.Wq_layers, self.Wk_layers, self.Wv_layers)]
-		output = self.concat(output)
-		output = self.Wo(output)
-		return output
+		return self.Wout(self.concat(output))
 
 if __name__ == '__main__':
 	mha = MultiHeadAttention(n_heads = 8, embed_dim = 128, name = 'MHA')
@@ -66,5 +68,8 @@ if __name__ == '__main__':
 	output = mha([x,x,x])
 	print(output.shape)
 
+	for w in mha.trainable_variables:# non_trainable_weights:
+		print(w.name, w.numpy())
+	
 
 	

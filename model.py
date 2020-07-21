@@ -6,7 +6,7 @@ from decoder import Sampler, TopKSampler, CategoricalSampler, DecoderCell
 
 class AttentionModel(tf.keras.Model):
 	
-	def __init__(self, embed_dim = 128, n_encode_layers=3, n_heads = 8, tanh_clipping=10.):
+	def __init__(self, embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10.):
 		super().__init__()
 		if embed_dim % n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
@@ -51,6 +51,7 @@ class AttentionModel(tf.keras.Model):
 		one_hot = tf.one_hot(indices = next_node, depth = self.n_nodes)		
 		visited_mask = tf.transpose(tf.cast(one_hot, dtype = tf.bool), (0,2,1))
 		mask, D = self.get_mask_D(next_node, visited_mask, D)
+		self.demand = tf.where(self.visited_customer[:,:,0], 0.0, self.demand)
 		prev_node_embedding = tf.matmul(one_hot, node_embeddings)
 		context = tf.concat([graph_embedding[:,None,:], prev_node_embedding, D[:,:,None]], axis = -1)
 		return mask, context, D
@@ -104,6 +105,7 @@ class AttentionModel(tf.keras.Model):
 		# self.batch, self.n_nodes, _ = tf.shape(self.xy)
 		self.batch = tf.shape(self.xy)[0]
 		self.n_nodes = tf.shape(self.xy)[1]
+
 		
 		self.is_next_depot = tf.ones([self.batch, 1], dtype = tf.bool)
 		self.selecter = {'greedy': TopKSampler(),
@@ -124,8 +126,10 @@ class AttentionModel(tf.keras.Model):
 		node_embeddings, graph_embedding = self.encoder(x)
 
 		mask, context, D = self.create_context_mask_t1(node_embeddings, graph_embedding) 
-		log_ps = tf.TensorArray(dtype = self.decoder.dtype, size = 0, dynamic_size = True, element_shape = (self.batch, self.n_nodes))
+		log_ps = tf.TensorArray(dtype = self.decoder.dtype, size = 0, dynamic_size = True, element_shape = (self.batch, self.n_nodes))	
 		tours = tf.TensorArray(dtype = tf.int32, size = 0, dynamic_size = True, element_shape = (self.batch,))
+		# log_ps = tf.TensorArray(dtype = self.decoder.dtype, size = 0, dynamic_size = True, element_shape = (6, 21))	
+		# tours = tf.TensorArray(dtype = tf.int32, size = 0, dynamic_size = True, element_shape = (6,))
 		
 		#tf.while_loop
 		for i in tf.range(self.n_nodes*2):
@@ -151,7 +155,7 @@ if __name__ == '__main__':
 	# tf.config.experimental_run_functions_eagerly(True)
 	model = AttentionModel()
 	dataset = generate_data(seed = 123)
-	for i, data in enumerate(dataset.batch(30)):
+	for i, data in enumerate(dataset.batch(6)):
 		output = model(data, decode_type = 'sampling', return_pi = True)
 		print(output[0])# cost: (batch,)
 		print(output[1])# ll: (batch,)
@@ -159,11 +163,10 @@ if __name__ == '__main__':
 		if i == 0:
 			break
 
-	print('model.trainable_weights')
-	for w in model.trainable_weights:
-		print(w.name)
-		print(w.numpy())
+	# print('model.trainable_weights')
+	# for w in model.trainable_weights:
+	# 	print(w.name)
+	# 	print(w.numpy())
 
-	# initializer = tf.keras.initializers.RandomUniform(minval=0., maxval=1.)
 	model.summary()
 

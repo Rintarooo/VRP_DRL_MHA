@@ -9,34 +9,42 @@ def copy_model(model, embed_dim = 128, n_customer = 20):
 	""" Copy model weights to new model
 		https://stackoverflow.com/questions/56841736/how-to-copy-a-network-in-tensorflow-2-0
 	"""
-	CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
-	data_random = (tf.random.uniform((2, 2), minval = 0, maxval = 1),
-					tf.random.uniform((2, n_customer, 2), minval = 0, maxval = 1),
-					tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
-						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
-					)
+	# CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
+	# data_random = (tf.random.uniform((2, 2), minval = 0, maxval = 1),
+	# 				tf.random.uniform((2, n_customer, 2), minval = 0, maxval = 1),
+	# 				tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
+	# 					dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
+	# 				)
+	dataset = generate_data(n_samples = 5, n_customer = n_customer)
 
 	new_model = AttentionModel(embed_dim)
-	_, _ = new_model(data_random, decode_type = 'sampling')
+	for i, data_random in enumerate(dataset.batch(5)):
+		_, _ = new_model(data_random, decode_type = 'sampling')
+		if i == 0:
+			break
+
 	for a, b in zip(new_model.variables, model.variables):
 		a.assign(b)# copies the weigths variables of model_b into model_a
 	return new_model
 
-def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
-	""" Load model weights from hd5 file
-		https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
-	"""
-	CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
-	data_random = (tf.random.uniform((2, 2), minval = 0, maxval = 1),
-					tf.random.uniform((2, n_customer, 2), minval = 0, maxval = 1),
-					tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
-						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
-					)
+# def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
+# 	""" Load model weights from hd5 file
+# 		https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
+# 	"""
+# 	CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
+# 	data_random = (tf.random.uniform((2, 2), minval = 0, maxval = 1),
+# 					tf.random.uniform((2, n_customer, 2), minval = 0, maxval = 1),
+# 					tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
+# 						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
+# 					)
 	
-	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
-	_, _ = model_loaded(data_random, decode_type = 'greedy')
-	model_loaded.load_weights(path)
-	return model_loaded
+# 	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
+# 	_, _ = model_loaded(data_random, decode_type = 'greedy')
+# 	model_loaded.load_weights(path)
+# 	return model_loaded
+
+
+
 
 def rollout(model, dataset, batch = 1000, disable_tqdm = False):
 	# Evaluate model in greedy mode
@@ -46,13 +54,22 @@ def rollout(model, dataset, batch = 1000, disable_tqdm = False):
 		costs_list.append(cost)
 	return tf.concat(costs_list, axis=0)
 
-def validate(dataset, model, batch = 1000):
-	"""Validates model on given dataset in greedy mode
-	"""
-	val_costs = rollout(model, dataset, batch = batch)
-	mean_cost = tf.reduce_mean(val_costs)
-	print(f"Validation score: {np.round(mean_cost, 4)}")
-	return mean_cost
+# def rollout(model, dataset, batch = 1000, disable_tqdm = False):
+# 	costs_list = tf.TensorArray(dtype = tf.float32, size = 0, dynamic_size = True, element_shape = (batch,))
+# 	for i, inputs in tqdm(enumerate(dataset.batch(batch)), disable = disable_tqdm, desc = 'Rollout greedy execution'):
+# 		cost, _ = model(inputs, decode_type = 'greedy')
+# 		costs_list = costs_list.write(i, cost)
+# 	return costs_list.stack()
+
+
+
+# def validate(dataset, model, batch = 1000):
+# 	"""Validates model on given dataset in greedy mode
+# 	"""
+# 	val_costs = rollout(model, dataset, batch = batch)
+# 	mean_cost = tf.reduce_mean(val_costs)
+# 	print(f"Validation score: {np.round(mean_cost, 4)}")
+# 	return mean_cost
 
 class RolloutBaseline:
 
