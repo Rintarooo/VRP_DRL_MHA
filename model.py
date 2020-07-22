@@ -102,16 +102,17 @@ class AttentionModel(tf.keras.Model):
 		"""
 		self.depot_xy, customer_xy, self.demand = x
 		self.xy = tf.concat([self.depot_xy[:, None, :], customer_xy], 1)
-		# self.batch, self.n_nodes, _ = tf.shape(self.xy)
-		self.batch = tf.shape(self.xy)[0]
-		self.n_nodes = tf.shape(self.xy)[1]
-
-		
+		self.batch, self.n_nodes, _ = self.xy.shape
+		"""
+			# self.batch, self.n_nodes, _ = tf.shape(self.xy)
+			.shape --> return static shape, tf.shape() --> return dynamic shape
+			https://pgaleone.eu/tensorflow/2018/07/28/understanding-tensorflow-tensors-shape-static-dynamic/
+		"""
 		self.is_next_depot = tf.ones([self.batch, 1], dtype = tf.bool)
 		self.selecter = {'greedy': TopKSampler(),
 						'sampling': CategoricalSampler()}.get(decode_type, None)
 
-	# @tf.function #(autograph = False)
+	# @tf.function# (autograph = False)
 	def call(self, x, return_pi = False, decode_type = 'greedy'):
 		""" node_embeddings: (batch, n_nodes, embed_dim)
 			graph_embedding: (batch, embed_dim)
@@ -128,8 +129,6 @@ class AttentionModel(tf.keras.Model):
 		mask, context, D = self.create_context_mask_t1(node_embeddings, graph_embedding) 
 		log_ps = tf.TensorArray(dtype = self.decoder.dtype, size = 0, dynamic_size = True, element_shape = (self.batch, self.n_nodes))	
 		tours = tf.TensorArray(dtype = tf.int32, size = 0, dynamic_size = True, element_shape = (self.batch,))
-		# log_ps = tf.TensorArray(dtype = self.decoder.dtype, size = 0, dynamic_size = True, element_shape = (6, 21))	
-		# tours = tf.TensorArray(dtype = tf.int32, size = 0, dynamic_size = True, element_shape = (6,))
 		
 		#tf.while_loop
 		for i in tf.range(self.n_nodes*2):

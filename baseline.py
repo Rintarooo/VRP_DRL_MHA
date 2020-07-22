@@ -19,10 +19,12 @@ def copy_model(model, embed_dim = 128, n_customer = 20):
 
 	new_model = AttentionModel(embed_dim)
 	for i, data_random in enumerate(dataset.batch(5)):
-		_, _ = new_model(data_random, decode_type = 'sampling')
-		if i == 0:
-			break
+		_, _ = model(data_random, decode_type = 'sampling')
+		cost, _ = new_model(data_random, decode_type = 'sampling')
+		# if i == 0:
+		# 	break
 
+	_, _ = new_model(data_random, decode_type = 'sampling')
 	for a, b in zip(new_model.variables, model.variables):
 		a.assign(b)# copies the weigths variables of model_b into model_a
 	return new_model
@@ -46,20 +48,20 @@ def copy_model(model, embed_dim = 128, n_customer = 20):
 
 
 
-def rollout(model, dataset, batch = 1000, disable_tqdm = False):
-	# Evaluate model in greedy mode
-	costs_list = []
-	for inputs in tqdm(dataset.batch(batch), disable = disable_tqdm, desc = 'Rollout greedy execution'):
-		cost, _ = model(inputs, decode_type = 'greedy')
-		costs_list.append(cost)
-	return tf.concat(costs_list, axis=0)
-
 # def rollout(model, dataset, batch = 1000, disable_tqdm = False):
-# 	costs_list = tf.TensorArray(dtype = tf.float32, size = 0, dynamic_size = True, element_shape = (batch,))
-# 	for i, inputs in tqdm(enumerate(dataset.batch(batch)), disable = disable_tqdm, desc = 'Rollout greedy execution'):
+# 	# Evaluate model in greedy mode
+# 	costs_list = []
+# 	for inputs in tqdm(dataset.batch(batch), disable = disable_tqdm, desc = 'Rollout greedy execution'):
 # 		cost, _ = model(inputs, decode_type = 'greedy')
-# 		costs_list = costs_list.write(i, cost)
-# 	return costs_list.stack()
+# 		costs_list.append(cost)
+# 	return tf.concat(costs_list, axis=0)
+
+def rollout(model, dataset, batch = 1000, disable_tqdm = False):
+	costs_list = tf.TensorArray(dtype = tf.float32, size = 0, dynamic_size = True, element_shape = (batch,))
+	for i, inputs in tqdm(enumerate(dataset.batch(batch)), disable = disable_tqdm, desc = 'Rollout greedy execution'):
+		cost, _ = model(inputs, decode_type = 'greedy')
+		costs_list = costs_list.write(i, cost)
+	return tf.reshape(costs_list.stack(), (-1,))
 
 
 
