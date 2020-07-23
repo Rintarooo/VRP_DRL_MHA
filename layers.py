@@ -55,7 +55,8 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
 			
 	def split_heads(self, T, batch):
-		""" T: (batch, n_nodes, self.embed_dim)
+		""" https://qiita.com/halhorn/items/c91497522be27bde17ce
+			T: (batch, n_nodes, self.embed_dim)
 			T reshaped: (batch, n_nodes, self.n_heads, self.head_depth)
 			return: (batch, self.n_heads, n_nodes, self.head_depth)
 		"""

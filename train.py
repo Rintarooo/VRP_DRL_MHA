@@ -37,6 +37,7 @@ def train(cfg, log_path = None):
 	baseline = RolloutBaseline(model, cfg.task, cfg.weight_dir, cfg.n_rollout_samples, 
 							cfg.embed_dim, cfg.n_customer, cfg.warmup_beta, cfg.wp_epochs)
 	optimizer = tf.keras.optimizers.Adam(learning_rate = cfg.lr)
+	
 	ave_loss = tf.keras.metrics.Mean()
 	ave_L = tf.keras.metrics.Mean()
 	
@@ -46,11 +47,13 @@ def train(cfg, log_path = None):
 		bs = baseline.eval_all(dataset)
 		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
 		
+		# ave_loss = tf.keras.metrics.Mean()
+		# ave_L = tf.keras.metrics.Mean()
 		t1 = time()
 		for t, inputs in enumerate(dataset.batch(cfg.batch)):
 			
 			loss, L_mean, grads = grad_func(model, inputs, bs, t)
-		
+
 			grads, _ = tf.clip_by_global_norm(grads, 1.0)
 			optimizer.apply_gradients(zip(grads, model.trainable_variables))# optimizer.step
 			
@@ -69,11 +72,14 @@ def train(cfg, log_path = None):
 						f.write('%dmin%dsec,%d,%d,%1.2f,%1.2f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss.result().numpy(), ave_L.result().numpy()))
 				t1 = time()
 
-			ave_loss.reset_states()
-			ave_L.reset_states()
+			# ave_loss.reset_states()
+			# ave_L.reset_states()
 
 		baseline.epoch_callback(model, epoch)
 		model.save_weights('%s%s_epoch%s.h5'%(cfg.weight_dir, cfg.task, epoch), save_format = 'h5')
+
+		ave_loss.reset_states()
+		ave_L.reset_states()
 
 if __name__ == '__main__':
 	cfg = load_pkl(file_parser().path)

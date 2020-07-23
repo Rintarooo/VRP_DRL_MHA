@@ -87,7 +87,7 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		
 if __name__ == '__main__':
 	training = True
-	K.set_learning_phase(training)
+	# K.set_learning_phase(training)
 	batch = 5
 	n_nodes = 21
 	encoder = GraphAttentionEncoder()

@@ -24,26 +24,25 @@ def copy_model(model, embed_dim = 128, n_customer = 20):
 		# if i == 0:
 		# 	break
 
-	_, _ = new_model(data_random, decode_type = 'sampling')
 	for a, b in zip(new_model.variables, model.variables):
 		a.assign(b)# copies the weigths variables of model_b into model_a
 	return new_model
 
-# def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
-# 	""" Load model weights from hd5 file
-# 		https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
-# 	"""
-# 	CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
-# 	data_random = (tf.random.uniform((2, 2), minval = 0, maxval = 1),
-# 					tf.random.uniform((2, n_customer, 2), minval = 0, maxval = 1),
-# 					tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
-# 						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
-# 					)
+def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
+	""" Load model weights from hd5 file
+		https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
+	"""
+	CAPACITIES = {10: 20., 20: 30., 50: 40., 100: 50.}
+	data_random = (tf.random.uniform((2, 2), minval = 0, maxval = 1),
+					tf.random.uniform((2, n_customer, 2), minval = 0, maxval = 1),
+					tf.cast(tf.random.uniform((2, n_customer), minval = 1, maxval = 10, 
+						dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32)
+					)
 	
-# 	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
-# 	_, _ = model_loaded(data_random, decode_type = 'greedy')
-# 	model_loaded.load_weights(path)
-# 	return model_loaded
+	model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
+	_, _ = model_loaded(data_random, decode_type = 'greedy')
+	model_loaded.load_weights(path)
+	return model_loaded
 
 
 

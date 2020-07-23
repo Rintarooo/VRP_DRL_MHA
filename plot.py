@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 from model import AttentionModel
 from data import generate_data
-from rollout import load_model
+from baseline import load_model
 from config import file_parser
 
 def get_clean_path(arr):
@@ -109,7 +109,7 @@ def get_journey(data, pi, title, idx_in_batch = 0):
 	fig.show()
 
 if __name__ == '__main__':
-	model = AttentionModel(decode_type = 'sampling')
+	model = AttentionModel()
 	pretrained = load_model(file_parser().path)
 	dataset = generate_data(n_customer = 20)
 	for i, data in enumerate(dataset.batch(10)):
