@@ -50,6 +50,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
 		self.attention = DotProductAttention(clip = clip, return_logits = return_logits, head_depth = self.head_depth)
 		self.Wk = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
+		
 		if self.return_logits is None:
 			self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
 			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
@@ -94,6 +95,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 			Q = self.Wq_fixed(q[:,:,:self.embed_dim]) + self.Wq_step(q[:,:,self.embed_dim:])
 		else:
 			Q = self.Wq(q)
+			
 		K, V = self.Wk(k), self.Wv(v)	
 		output = self.attention([self.split_heads(T, batch) for T in [Q, K, V]], mask = mask)
 		output = self.combine_heads(output, batch)

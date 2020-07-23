@@ -50,11 +50,10 @@ class EncoderLayer(tf.keras.layers.Layer):
 		)
 		super().build(input_shape)
 	
-	"""	def call
-		arg x: (batch, n_nodes, embed_dim)
-		return: (batch, n_nodes, embed_dim)
-	"""
 	def call(self, x, mask=None, training = True):
+		"""	arg x: (batch, n_nodes, embed_dim)
+			return: (batch, n_nodes, embed_dim)
+		"""
 		return self.FF_sublayer(self.MHA_sublayer(x, mask = mask, training = training), training = training)
 
 class GraphAttentionEncoder(tf.keras.models.Model):

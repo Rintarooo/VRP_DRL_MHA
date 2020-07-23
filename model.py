@@ -4,14 +4,14 @@ from data import generate_data
 from encoder import GraphAttentionEncoder
 from decoder import Sampler, TopKSampler, CategoricalSampler, DecoderCell
 
-class AttentionModel(tf.keras.Model):
+class AttentionModel(tf.keras.models.Model):
 	
 	def __init__(self, embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10.):
 		super().__init__()
 		if embed_dim % n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 
-		self.encoder = GraphAttentionEncoder(embed_dim = embed_dim, n_heads = n_heads, n_layers = n_encode_layers)
+		self.encoder = GraphAttentionEncoder(embed_dim = embed_dim, n_heads = n_heads, n_layers = n_encode_layers, FF_hidden= 512)
 		self.decoder = DecoderCell(n_heads = n_heads, clip = tanh_clipping)
 
 	def get_mask_D(self, next_node, visited_mask, D):
@@ -52,7 +52,8 @@ class AttentionModel(tf.keras.Model):
 		visited_mask = tf.transpose(tf.cast(one_hot, dtype = tf.bool), (0,2,1))
 		mask, D = self.get_mask_D(next_node, visited_mask, D)
 		self.demand = tf.where(self.visited_customer[:,:,0], 0.0, self.demand)
-		prev_node_embedding = tf.matmul(one_hot, node_embeddings)
+		# prev_node_embedding = tf.matmul(one_hot, node_embeddings)
+		prev_node_embedding = tf.gather(node_embeddings, indices = next_node, batch_dims = 1)
 		context = tf.concat([graph_embedding[:,None,:], prev_node_embedding, D[:,:,None]], axis = -1)
 		return mask, context, D
 
@@ -76,7 +77,6 @@ class AttentionModel(tf.keras.Model):
 	def get_log_likelihood(self, _log_p, pi):
 		# Get log_p corresponding to selected actions
 		log_p = tf.gather_nd(_log_p, tf.expand_dims(pi, axis = -1), batch_dims = 2)
-		# print(log_p)
 		return tf.reduce_sum(log_p, 1)
 
 	def get_costs(self, pi):

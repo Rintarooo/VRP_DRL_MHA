@@ -33,7 +33,7 @@ class Sampler(tf.keras.layers.Layer):
 	def __init__(self, n_samples = 1, **kwargs):
 		super().__init__(**kwargs)
 		self.n_samples = n_samples
-		""" logits: (batch, n_classes)
+		""" logits: (batch, n_nodes)
 			TopKSampler <-- greedy; sample ones with biggest probability
 			CategoricalSampler <-- sampling; randomly sample ones from possible distribution based on probability
 		"""
