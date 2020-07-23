@@ -10,13 +10,18 @@ class DecoderCell(tf.keras.models.Model):
 
 	def build(self, input_shape):
 		context_shape, node_embeddings_shape = input_shape
-		self.prep_attention_layer = MultiHeadAttention(n_heads = self.n_heads, embed_dim = node_embeddings_shape[2])
+		self.prep_attention_layer = MultiHeadAttention(n_heads = self.n_heads, embed_dim = node_embeddings_shape[2], spilt_Wq = True)
 		self.final_attention_layer = MultiHeadAttention(n_heads = 1, embed_dim = node_embeddings_shape[2], clip = self.clip, return_logits = True)
 		super().build(input_shape)
 
 	@tf.function
 	def call(self, inputs, mask = None):
 		""" context: (batch, 1, 2*embed_dim+1)
+			context = tf.concat([], axis = -1)
+			tf.concat([graph embedding[:,None,:], previous node embedding, remaining vehicle capacity[:,:,None]], axis = -1)
+			graph embedding: (batch, embed_dim)
+			previous node embedding: (batch, n_nodes, embed_dim)
+			remaining vehicle capacity(= D): (batch, 1) 
 			node_embeddings: (batch, n_nodes, embed_dim)
 		"""
 		context, node_embeddings = inputs

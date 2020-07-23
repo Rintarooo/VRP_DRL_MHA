@@ -35,7 +35,7 @@ class DotProductAttention(tf.keras.layers.Layer):
 		return tf.matmul(probs, V)
 
 class MultiHeadAttention(tf.keras.layers.Layer):
-	def __init__(self, n_heads = 8, embed_dim = 128, clip = None, return_logits = None, **kwargs):
+	def __init__(self, n_heads = 8, embed_dim = 128, clip = None, return_logits = None, spilt_Wq = None, **kwargs):
 		super().__init__(**kwargs)
 		self.n_heads = n_heads
 		self.embed_dim = embed_dim
@@ -43,16 +43,21 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		if self.embed_dim % self.n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 		
-		self.return_logits = return_logits 
+		self.return_logits = return_logits
+		self.spilt_Wq = spilt_Wq 
 		stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
 		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)# init = tf.random_uniform_initializer(minval = -stdv, maxval= stdv)
 
 		self.attention = DotProductAttention(clip = clip, return_logits = return_logits, head_depth = self.head_depth)
 		self.Wk = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
 		if self.return_logits is None:
-			self.Wq = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# torch.nn.Linear(embed_dim, embed_dim)
 			self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
 			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
+			if self.spilt_Wq:
+				self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init, name='wq_fixed')# torch.nn.Linear(embed_dim, embed_dim)
+				self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init, name='wq_step')# torch.nn.Linear(embed_dim, embed_dim)
+			else:
+				self.Wq = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# torch.nn.Linear(embed_dim, embed_dim)
 			
 	def split_heads(self, T, batch):
 		""" https://qiita.com/halhorn/items/c91497522be27bde17ce
@@ -85,7 +90,11 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		if self.return_logits:
 			return self.attention([q, self.Wk(k), None], mask = mask)
 		
-		Q, K, V = self.Wq(q), self.Wk(k), self.Wv(v)
+		if self.spilt_Wq:
+			Q = self.Wq_fixed(q[:,:,:self.embed_dim]) + self.Wq_step(q[:,:,self.embed_dim:])
+		else:
+			Q = self.Wq(q)
+		K, V = self.Wk(k), self.Wv(v)	
 		output = self.attention([self.split_heads(T, batch) for T in [Q, K, V]], mask = mask)
 		output = self.combine_heads(output, batch)
 		return self.Wout(output)

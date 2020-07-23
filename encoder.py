@@ -94,13 +94,14 @@ if __name__ == '__main__':
 	dataset = generate_data()
 	mask = tf.zeros((batch, n_nodes, 1), dtype = tf.bool)
 	for i, data in enumerate(dataset.batch(batch)):
-		output = encoder(data, training = training, mask = mask)
+		# output = encoder(data, training = training, mask = mask)
+		output = encoder(data, mask = mask)
 		# print(output[0])
 		# print(output[1])
 		if i == 0:
 			break
 	encoder.summary()# available after buliding graph
-	# for w in encoder.trainable_weights:# non_trainable_weights:
-	# 	print(w.name)
+	for w in encoder.trainable_weights:# non_trainable_weights:
+		print(w.name)
 	# 	print(w.shape)
 	

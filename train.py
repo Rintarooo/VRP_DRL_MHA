@@ -62,14 +62,14 @@ def train(cfg, log_path = None):
 			
 			if t%(cfg.batch_verbose) == 0:
 				t2 = time()
-				print('Epoch %d (batch = %d): Loss: %1.2f L: %1.2f, %dmin%dsec'%(epoch, t, ave_loss.result().numpy(), ave_L.result().numpy(), (t2-t1)//60, (t2-t1)%60))
+				print('Epoch %d (batch = %d): Loss: %1.3f L: %1.3f, %dmin%dsec'%(epoch, t, ave_loss.result().numpy(), ave_L.result().numpy(), (t2-t1)//60, (t2-t1)%60))
 				if cfg.islogger:
 					if log_path is None:
 						log_path = '%s%s_%s.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/
 						with open(log_path, 'w') as f:
 							f.write('time,epoch,batch,loss,cost\n')
 					with open(log_path, 'a') as f:
-						f.write('%dmin%dsec,%d,%d,%1.2f,%1.2f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss.result().numpy(), ave_L.result().numpy()))
+						f.write('%dmin%dsec,%d,%d,%1.3f,%1.3f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss.result().numpy(), ave_L.result().numpy()))
 				t1 = time()
 
 			# ave_loss.reset_states()
