@@ -16,6 +16,9 @@ class DotProductAttention(tf.keras.layers.Layer):
 		""" Q: (batch, n_heads, q_seq(=n_nodes or =1), head_depth)
 			K: (batch, n_heads, k_seq(=n_nodes), head_depth)
 			logits: (batch, n_heads, q_seq(this could be 1), k_seq)
+			mask: (batch, n_nodes, 1), e.g. tf.Tensor([[ True], [ True], [False]])
+			mask[:,None,None,:,0]: (batch, 1, 1, n_nodes) ==> broadcast depending on logits shape
+			[True] -> [1 * -np.inf], [False] -> [logits]
 		"""
 		if self.clip is not None:
 			logits = self.clip * tf.math.tanh(logits)
@@ -27,10 +30,7 @@ class DotProductAttention(tf.keras.layers.Layer):
 
 		if mask is not None:
 			logits = tf.where(mask[:,None,None,:,0], tf.ones_like(logits) * (-np.inf), logits)
-			""" mask: (batch, n_nodes, 1), tf.Tensor([[ True], [ True], [False]])
-				mask[:,None,None,:,0]: (batch, 1, 1, n_nodes) ==> broadcast depending on logits shape
-				[True] -> [1 * -np.inf], [False] -> [logits]
-			"""
+		
 		probs = tf.nn.softmax(logits, axis = -1)
 		return tf.matmul(probs, V)
 
@@ -95,7 +95,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 			Q = self.Wq_fixed(q[:,:,:self.embed_dim]) + self.Wq_step(q[:,:,self.embed_dim:])
 		else:
 			Q = self.Wq(q)
-			
+
 		K, V = self.Wk(k), self.Wv(v)	
 		output = self.attention([self.split_heads(T, batch) for T in [Q, K, V]], mask = mask)
 		output = self.combine_heads(output, batch)

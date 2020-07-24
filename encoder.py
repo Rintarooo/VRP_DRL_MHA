@@ -12,8 +12,7 @@ class ResidualBlock_BN(tf.keras.layers.Layer):
 	def call(self, x, mask = None, training = True):
 		if mask is None:
 			return self.BN(x + self.MHA(x), training = training)
-		else:
-			return self.BN(x + self.MHA(x, mask), training = training)
+		return self.BN(x + self.MHA(x, mask), training = training)
 
 class SelfAttention(tf.keras.layers.Layer):
 	def __init__(self, MHA, **kwargs):
@@ -43,8 +42,10 @@ class EncoderLayer(tf.keras.layers.Layer):
 		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
 		self.FF_sublayer = ResidualBlock_BN(
 			tf.keras.models.Sequential([
-					tf.keras.layers.Dense(self.FF_hidden, use_bias = True, activation = self.activation, kernel_initializer = init, bias_initializer = init),
-					tf.keras.layers.Dense(input_shape[2], use_bias = True, kernel_initializer = init, bias_initializer = init)
+					# tf.keras.layers.Dense(self.FF_hidden, use_bias = True, activation = self.activation, kernel_initializer = init, bias_initializer = init),
+					# tf.keras.layers.Dense(input_shape[2], use_bias = True, kernel_initializer = init, bias_initializer = init)
+					tf.keras.layers.Dense(self.FF_hidden, activation = self.activation, kernel_initializer = init),
+					tf.keras.layers.Dense(input_shape[2], kernel_initializer = init)
 			]),
 			self.BN2
 		)
@@ -61,8 +62,10 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		super().__init__()
 		stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
 		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
-		self.init_W_depot = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(2, embedding_dim)
-		self.init_W = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(3, embedding_dim)
+		# self.init_W_depot = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(2, embedding_dim)
+		# self.init_W = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(3, embedding_dim)
+		self.init_W_depot = tf.keras.layers.Dense(embed_dim, kernel_initializer = init)# torch.nn.Linear(2, embedding_dim)
+		self.init_W = tf.keras.layers.Dense(embed_dim, kernel_initializer = init)# torch.nn.Linear(3, embedding_dim)
 		self.encoder_layers = [EncoderLayer(n_heads, FF_hidden) for _ in range(n_layers)]
 	
 	@tf.function
@@ -85,7 +88,7 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		return (x, tf.reduce_mean(x, axis = 1))
 		
 if __name__ == '__main__':
-	training = True
+	# training = True
 	# K.set_learning_phase(training)
 	batch = 5
 	n_nodes = 21
@@ -102,5 +105,6 @@ if __name__ == '__main__':
 	encoder.summary()# available after buliding graph
 	for w in encoder.trainable_weights:# non_trainable_weights:
 		print(w.name)
-	# 	print(w.shape)
+		# print(w.shape)
+		# print(w.numpy)
 	

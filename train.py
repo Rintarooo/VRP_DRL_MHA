@@ -40,16 +40,15 @@ def train(cfg, log_path = None):
 	
 	ave_loss = tf.keras.metrics.Mean()
 	ave_L = tf.keras.metrics.Mean()
-	
+	t1 = time()
+
 	for epoch in range(cfg.epochs):
 		dataset = generate_data(cfg.n_samples, cfg.n_customer)
 		
 		bs = baseline.eval_all(dataset)
 		bs = tf.reshape(bs, (-1, cfg.batch)) if bs is not None else None # bs: (cfg.batch_steps, cfg.batch) or None
 		
-		# ave_loss = tf.keras.metrics.Mean()
-		# ave_L = tf.keras.metrics.Mean()
-		t1 = time()
+		
 		for t, inputs in enumerate(dataset.batch(cfg.batch)):
 			
 			loss, L_mean, grads = grad_func(model, inputs, bs, t)
@@ -62,7 +61,7 @@ def train(cfg, log_path = None):
 			
 			if t%(cfg.batch_verbose) == 0:
 				t2 = time()
-				print('Epoch %d (batch = %d): Loss: %1.2f L: %1.3f, %dmin%dsec'%(epoch, t, ave_loss.result().numpy(), ave_L.result().numpy(), (t2-t1)//60, (t2-t1)%60))
+				print('Epoch %d (batch = %d): Loss: %1.3f L: %1.3f, %dmin%dsec'%(epoch, t, ave_loss.result().numpy(), ave_L.result().numpy(), (t2-t1)//60, (t2-t1)%60))
 				if cfg.islogger:
 					if log_path is None:
 						log_path = '%s%s_%s.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/
@@ -71,9 +70,6 @@ def train(cfg, log_path = None):
 					with open(log_path, 'a') as f:
 						f.write('%dmin%dsec,%d,%d,%1.3f,%1.3f\n'%((t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss.result().numpy(), ave_L.result().numpy()))
 				t1 = time()
-
-			# ave_loss.reset_states()
-			# ave_L.reset_states()
 
 		baseline.epoch_callback(model, epoch)
 		model.save_weights('%s%s_epoch%s.h5'%(cfg.weight_dir, cfg.task, epoch), save_format = 'h5')
