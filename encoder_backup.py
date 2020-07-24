@@ -38,12 +38,14 @@ class EncoderLayer(tf.keras.layers.Layer):
 			),
 			self.BN1
 		)
+		stdv = 1./tf.math.sqrt(tf.cast(input_shape[2], tf.float32))
+		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
 		self.FF_sublayer = ResidualBlock_BN(
 			tf.keras.models.Sequential([
 					# tf.keras.layers.Dense(self.FF_hidden, use_bias = True, activation = self.activation, kernel_initializer = init, bias_initializer = init),
 					# tf.keras.layers.Dense(input_shape[2], use_bias = True, kernel_initializer = init, bias_initializer = init)
-					tf.keras.layers.Dense(self.FF_hidden, activation = self.activation),
-					tf.keras.layers.Dense(input_shape[2])
+					tf.keras.layers.Dense(self.FF_hidden, activation = self.activation, kernel_initializer = init),
+					tf.keras.layers.Dense(input_shape[2], kernel_initializer = init)
 			]),
 			self.BN2
 		)
@@ -58,12 +60,12 @@ class EncoderLayer(tf.keras.layers.Layer):
 class GraphAttentionEncoder(tf.keras.models.Model):
 	def __init__(self, embed_dim = 128, n_heads = 8, n_layers = 3, FF_hidden = 512):
 		super().__init__()
-		# stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
-		# init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
+		stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
+		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
 		# self.init_W_depot = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(2, embedding_dim)
 		# self.init_W = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(3, embedding_dim)
-		self.init_W_depot = tf.keras.layers.Dense(embed_dim)# torch.nn.Linear(2, embedding_dim)
-		self.init_W = tf.keras.layers.Dense(embed_dim)# torch.nn.Linear(3, embedding_dim)
+		self.init_W_depot = tf.keras.layers.Dense(embed_dim, kernel_initializer = init)# torch.nn.Linear(2, embedding_dim)
+		self.init_W = tf.keras.layers.Dense(embed_dim, kernel_initializer = init)# torch.nn.Linear(3, embedding_dim)
 		self.encoder_layers = [EncoderLayer(n_heads, FF_hidden) for _ in range(n_layers)]
 	
 	@tf.function

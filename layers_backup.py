@@ -45,20 +45,20 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		
 		self.return_logits = return_logits
 		self.spilt_Wq = spilt_Wq 
-		# stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
-		# init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)# init = tf.random_uniform_initializer(minval = -stdv, maxval= stdv)
+		stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
+		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)# init = tf.random_uniform_initializer(minval = -stdv, maxval= stdv)
 
 		self.attention = DotProductAttention(clip = clip, return_logits = return_logits, head_depth = self.head_depth)
-		self.Wk = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
+		self.Wk = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
 		
 		if self.return_logits is None:
-			self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
-			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
+			self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
+			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
 			if self.spilt_Wq:
-				self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# name='wq_fixed', torch.nn.Linear(embed_dim, embed_dim)
-				self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# name='wq_step', torch.nn.Linear(embed_dim, embed_dim)
+				self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# name='wq_fixed', torch.nn.Linear(embed_dim, embed_dim)
+				self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# name='wq_step', torch.nn.Linear(embed_dim, embed_dim)
 			else:
-				self.Wq = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# torch.nn.Linear(embed_dim, embed_dim)
+				self.Wq = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# torch.nn.Linear(embed_dim, embed_dim)
 			
 	def split_heads(self, T, batch):
 		""" https://qiita.com/halhorn/items/c91497522be27bde17ce
