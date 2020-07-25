@@ -22,7 +22,8 @@ class DecoderCell(tf.keras.models.Model):
 		self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='wq_step_context')# torch.nn.Linear(embed_dim, embed_dim)
 		
 		self.MHA1 = MultiHeadAttention(n_heads = self.n_heads, embed_dim = embed_dim, not_need_W = True)
-		self.MHA2 = MultiHeadAttention(n_heads = 1, embed_dim = embed_dim, clip = self.clip, not_need_W = True, return_logits = True)
+		# self.MHA2 = MultiHeadAttention(n_heads = 1, embed_dim = embed_dim, clip = self.clip, not_need_W = True, return_logits = True)
+		self.MHA2 = DotProductAttention(clip = clip, return_logits = True, head_depth = self.embed_dim)# because n_heads = 1
 		self.env = Env
 	
 	@tf.function
@@ -75,11 +76,12 @@ class DecoderCell(tf.keras.models.Model):
 		
 		for i in tf.range(env.n_nodes*2):
 			logits = self._compute_mha(Q_fixed, step_context, K1, V, K2, mask) 
-			next_node = selecter(logits)
+			log_p = tf.nn.log_softmax(logits, axis = -1)
+			next_node = selecter(log_p)
 			mask, step_context, D = env._get_step(next_node, D)
 	
 			tours = tours.write(i, tf.squeeze(next_node, axis = 1))
-			log_ps = log_ps.write(i, tf.nn.log_softmax(logits, axis = -1))
+			log_ps = log_ps.write(i, log_p)
 
 			if tf.reduce_all(env.visited_customer):
 				break

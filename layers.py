@@ -11,8 +11,6 @@ class DotProductAttention(tf.keras.layers.Layer):
 		self.scale = tf.math.sqrt(dk) 
 
 	def call(self, x, mask = None):
-		Q, K, V = x
-		logits = tf.matmul(Q, K, transpose_b = True) / self.scale
 		""" Q: (batch, n_heads, q_seq(=n_nodes or =1), head_depth)
 			K: (batch, n_heads, k_seq(=n_nodes), head_depth)
 			logits: (batch, n_heads, q_seq(this could be 1), k_seq)
@@ -20,6 +18,9 @@ class DotProductAttention(tf.keras.layers.Layer):
 			mask[:,None,None,:,0]: (batch, 1, 1, n_nodes) ==> broadcast depending on logits shape
 			[True] -> [1 * -np.inf], [False] -> [logits]
 		"""
+		Q, K, V = x
+		logits = tf.matmul(Q, K, transpose_b = True) / self.scale
+
 		if self.clip is not None:
 			logits = self.clip * tf.math.tanh(logits)
 			
@@ -43,7 +44,6 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		if self.embed_dim % self.n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 		
-		self.return_logits = return_logits
 		self.not_need_W = not_need_W 
 
 		self.attention = DotProductAttention(clip = clip, return_logits = return_logits, head_depth = self.head_depth)
@@ -89,9 +89,9 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 			q, k, v = x
 			Q, K, V = self.Wq(q), self.Wk(k), self.Wv(v)
 
-		if self.return_logits:
-			assert V is None, 'Decoder V should be None'
-			return self.attention([Q, K, V], mask = mask)
+		# if self.return_logits:
+		# 	assert V is None, 'Decoder V should be None'
+		# 	return self.attention([Q, K, V], mask = mask)
 
 		batch = K.shape[0]	
 		output = self.attention([self.split_heads(T, batch) for T in [Q, K, V]], mask = mask)

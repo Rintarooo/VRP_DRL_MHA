@@ -64,6 +64,7 @@ class Env():
 		self.demand = tf.where(self.visited_customer[:,:,0], 0.0, self.demand)
 		# prev_node_embedding = tf.matmul(one_hot, self.node_embeddings)
 		prev_node_embedding = tf.gather(self.node_embeddings, indices = next_node, batch_dims = 1)
+		
 		context = tf.concat([prev_node_embedding, D[:,:,None]], axis = -1)
 		return mask, context, D
 

@@ -86,6 +86,7 @@ class GraphAttentionDecoder(tf.keras.models.Model):
 
 		# add remaining capacity
 		step_context = tf.concat([cur_embedded_node, self.problem.VEHICLE_CAPACITY - state.used_capacity[:, :, None]], axis=-1)
+		tf.print((self.problem.VEHICLE_CAPACITY - state.used_capacity[:, :, None])[0])
 
 		return step_context  # (batch_size, 1, input_dim + 1)
 
