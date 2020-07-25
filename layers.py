@@ -35,6 +35,7 @@ class DotProductAttention(tf.keras.layers.Layer):
 		probs = tf.nn.softmax(logits, axis = -1)
 		return tf.matmul(probs, V)
 
+
 class MultiHeadAttention(tf.keras.layers.Layer):
 	def __init__(self, n_heads = 8, embed_dim = 128, clip = None, return_logits = None, not_need_W = None, **kwargs):
 		super().__init__(**kwargs)
@@ -45,7 +46,6 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 			raise ValueError("embed_dim = n_heads * head_depth")
 		
 		self.not_need_W = not_need_W 
-
 		self.attention = DotProductAttention(clip = clip, return_logits = return_logits, head_depth = self.head_depth)
 		if self.not_need_W is None:
 			# stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
