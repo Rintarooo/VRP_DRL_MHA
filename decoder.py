@@ -26,7 +26,7 @@ class DecoderCell(tf.keras.models.Model):
 		self.MHA2 = DotProductAttention(clip = clip, return_logits = True, head_depth = self.embed_dim)# because n_heads = 1
 		self.env = Env
 	
-	@tf.function
+	# @tf.function
 	def compute_static(self, node_embeddings, graph_embedding):
 		Q_fixed = self.Wq_fixed(graph_embedding[:,None,:])
 		K1 = self.Wk1(node_embeddings)
@@ -34,7 +34,7 @@ class DecoderCell(tf.keras.models.Model):
 		K2 = self.Wk2(node_embeddings)
 		return Q_fixed, K1, V, K2
 
-	@tf.function
+	# @tf.function
 	def _compute_mha(self, Q_fixed, step_context, K1, V, K2, mask):
 		Q_step = self.Wq_step(step_context)
 		Q = Q_fixed + Q_step
@@ -77,6 +77,7 @@ class DecoderCell(tf.keras.models.Model):
 		for i in tf.range(env.n_nodes*2):
 			logits = self._compute_mha(Q_fixed, step_context, K1, V, K2, mask) 
 			log_p = tf.nn.log_softmax(logits, axis = -1)
+			# print(log_p[0])
 			next_node = selecter(log_p)
 			mask, step_context, D = env._get_step(next_node, D)
 	
@@ -94,7 +95,7 @@ class DecoderCell(tf.keras.models.Model):
 		return cost, ll
 
 if __name__ == '__main__':
-	batch, n_nodes, embed_dim = 5, 21, 128
+	batch, n_nodes, embed_dim = 10, 21, 128
 	dataset = generate_data()
 	decoder = DecoderCell(embed_dim, n_heads = 8, clip = 10.)
 	for i, data in enumerate(dataset.batch(batch)):

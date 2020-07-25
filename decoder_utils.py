@@ -46,7 +46,13 @@ class Env():
 		D = D - selected_demand * (1.0 - tf.cast(self.is_next_depot, tf.float32))
 		capacity_over_customer = self.demand > D
 		mask_customer = capacity_over_customer[:, :, None] | self.visited_customer
-		mask_depot = tf.math.logical_not(tf.reduce_all(mask_customer, axis = 1))
+
+		# print('mask_customer[0]', mask_customer[0])
+		# mask_depot = tf.math.logical_not(tf.reduce_all(mask_customer, axis = 1))
+		# mask_depot = self.is_next_depot | tf.reduce_all(mask_customer, axis = 1)
+		mask_depot = self.is_next_depot & (tf.reduce_sum(tf.cast(mask_customer == False, tf.int32), axis = 1) > 0)
+		# print('mask_depot', mask_depot[0])
+
 		""" We can choose depot if 1) we are not in depot or 2) all nodes are visited
 			tf.reduce_all: if there's any False on the specified axis, return False
 			if all customer nodes are True, mask_depot should be False so that the vehicle returns back to depot 
@@ -64,7 +70,7 @@ class Env():
 		self.demand = tf.where(self.visited_customer[:,:,0], 0.0, self.demand)
 		# prev_node_embedding = tf.matmul(one_hot, self.node_embeddings)
 		prev_node_embedding = tf.gather(self.node_embeddings, indices = next_node, batch_dims = 1)
-		
+
 		context = tf.concat([prev_node_embedding, D[:,:,None]], axis = -1)
 		return mask, context, D
 

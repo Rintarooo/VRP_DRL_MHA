@@ -88,6 +88,7 @@ class GraphAttentionDecoder(tf.keras.models.Model):
 		step_context = tf.concat([cur_embedded_node, self.problem.VEHICLE_CAPACITY - state.used_capacity[:, :, None]], axis=-1)
 		# tf.print((self.problem.VEHICLE_CAPACITY - state.used_capacity[:, :, None])[0])
 
+
 		return step_context  # (batch_size, 1, input_dim + 1)
 
 	def decoder_mha(self, Q, K, V, mask=None):
@@ -226,7 +227,7 @@ class GraphAttentionDecoder(tf.keras.models.Model):
 
 			# compute probabilities
 			log_p = self.get_log_p(mha, K_tanh, mask)  # (batch_size, 1, n_nodes)
-
+			print(i, log_p[0])
 			# next step is to select node
 			selected = self._select_node(log_p)
 
@@ -239,6 +240,7 @@ class GraphAttentionDecoder(tf.keras.models.Model):
 
 		# Collected lists, return Tensor
 		log_ps, pi = tf.stack(outputs, 1), tf.cast(tf.stack(sequences, 1), tf.float32)
+		print(pi[0])
 		cost = self.problem.get_costs(inputs, pi)
 		ll = self._calc_log_likelihood(log_ps, pi)
 		return cost, ll
@@ -249,7 +251,7 @@ if __name__ == '__main__':
 	batch = 10
 	n_nodes = 21
 	embed_dim = 128
-	embeddings, context_vectors = tf.ones((batch, n_nodes, embed_dim)), tf.ones((batch, embed_dim))
+	embeddings, context_vectors = tf.ones((batch, n_nodes, embed_dim), dtype = tf.float32), tf.ones((batch, embed_dim), dtype = tf.float32)
 	data = generate_data(10, 20)
 	for i, data in enumerate(data.batch(10)):
 		output = model(data, embeddings, context_vectors)

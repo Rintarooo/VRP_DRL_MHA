@@ -51,8 +51,9 @@ class VRPproblem():
         mask_loc = tf.cast(visited_loc, tf.bool) | exceeds_cap[:, None, :]
 
         # We can choose depot if 1) we are not in depot OR 2) all nodes are visited
+        print('mask_loc[0]', mask_loc[0])
         mask_depot = self.from_depot & (tf.reduce_sum(tf.cast(mask_loc == False, tf.int32), axis=-1) > 0)
-
+        print('mask_depot[0]', mask_depot[0])
         return tf.concat([mask_depot[:, :, None], mask_loc], axis=-1)
 
     def step(self, action):
