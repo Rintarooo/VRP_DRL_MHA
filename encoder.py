@@ -86,18 +86,17 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		return (x, tf.reduce_mean(x, axis = 1))
 		
 if __name__ == '__main__':
-	# training = True
-	# K.set_learning_phase(training)
+	training = False
+	K.set_learning_phase(training)
 	batch = 5
 	n_nodes = 21
 	encoder = GraphAttentionEncoder()
 	dataset = generate_data()
 	mask = tf.zeros((batch, n_nodes, 1), dtype = tf.bool)
 	for i, data in enumerate(dataset.batch(batch)):
-		# output = encoder(data, training = training, mask = mask)
-		output = encoder(data, mask = mask)
-		# print(output[0])
-		# print(output[1])
+		output = encoder(data, training = training, mask = mask)
+		print('output[0].shape:', output[0].shape)
+		print('output[1].shape', output[1].shape)
 		if i == 0:
 			break
 	encoder.summary()# available after buliding graph

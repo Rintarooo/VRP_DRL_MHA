@@ -10,7 +10,7 @@ import tensorflow as tf
 # 								dtype = tf.int32), tf.float32) / tf.cast(CAPACITIES[n_customer], tf.float32))
 # 	return tf.data.Dataset.from_tensor_slices((list(depot), list(graphs), list(demand)))
 
-def generate_data(n_samples = 10000, n_customer = 20, seed = None):
+def generate_data(n_samples = 1000, n_customer = 20, seed = None):
 	g = tf.random.experimental.Generator.from_non_deterministic_state()
 	if seed is not None:
 		g = tf.random.experimental.Generator.from_seed(seed)
