@@ -13,13 +13,13 @@ class DecoderCell(tf.keras.models.Model):
 		self.embed_dim = embed_dim
 		self.clip = clip
 
-		self.Wk1 = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
-		self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
-		self.Wk2 = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
-		self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# torch.nn.Linear(embed_dim, embed_dim)
+		self.Wk1 = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='wk')# (embed_dim, embed_dim)
+		self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='wv')# (embed_dim, embed_dim)
+		self.Wk2 = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='wk_tanh')# (embed_dim, embed_dim)
+		self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='wq_context')# torch.nn.Linear(embed_dim, embed_dim)
 
-		self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
-		self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# torch.nn.Linear(embed_dim, embed_dim)
+		self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='w_out')# (embed_dim, embed_dim)
+		self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False, name='wq_step_context')# torch.nn.Linear(embed_dim, embed_dim)
 		
 		self.MHA1 = MultiHeadAttention(n_heads = self.n_heads, embed_dim = embed_dim, not_need_W = True)
 		self.MHA2 = MultiHeadAttention(n_heads = 1, embed_dim = embed_dim, clip = self.clip, not_need_W = True, return_logits = True)

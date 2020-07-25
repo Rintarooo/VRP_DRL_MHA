@@ -11,7 +11,8 @@ class AttentionModel(tf.keras.models.Model):
 		if embed_dim % n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 
-		self.Encoder = GraphAttentionEncoder(embed_dim, n_heads, n_encode_layers, FF_hidden= 512)
+		# self.Encoder = GraphAttentionEncoder(embed_dim, n_heads, n_encode_layers, FF_hidden= 512)
+		self.Encoder = GraphAttentionEncoder(embed_dim, n_heads, n_encode_layers, 512)
 		self.Decoder = DecoderCell(embed_dim, n_heads, tanh_clipping)
 
 	def call(self, x, training = True, return_pi = False, decode_type = 'greedy'):
