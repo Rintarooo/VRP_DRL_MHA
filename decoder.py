@@ -26,7 +26,7 @@ class DecoderCell(tf.keras.models.Model):
 		self.MHA2 = DotProductAttention(clip = clip, return_logits = True, head_depth = self.embed_dim)# because n_heads = 1
 		self.env = Env
 	
-	# @tf.function
+	@tf.function
 	def compute_static(self, node_embeddings, graph_embedding):
 		Q_fixed = self.Wq_fixed(graph_embedding[:,None,:])
 		K1 = self.Wk1(node_embeddings)
@@ -34,7 +34,7 @@ class DecoderCell(tf.keras.models.Model):
 		K2 = self.Wk2(node_embeddings)
 		return Q_fixed, K1, V, K2
 
-	# @tf.function
+	@tf.function
 	def _compute_mha(self, Q_fixed, step_context, K1, V, K2, mask):
 		Q_step = self.Wq_step(step_context)
 		Q = Q_fixed + Q_step
