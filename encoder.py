@@ -34,7 +34,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		self.MHA_sublayer = ResidualBlock_BN(
 			SelfAttention(
-					MultiHeadAttention(n_heads = self.n_heads, embed_dim = input_shape[2])# input_shape[2] = embed_dim = 128	
+					MultiHeadAttention(n_heads = self.n_heads, embed_dim = input_shape[2], need_W = True)# input_shape[2] = embed_dim = 128	
 			),
 			self.BN1
 		)

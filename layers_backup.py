@@ -11,8 +11,6 @@ class DotProductAttention(tf.keras.layers.Layer):
 		self.scale = tf.math.sqrt(dk) 
 
 	def call(self, x, mask = None):
-		Q, K, V = x
-		logits = tf.matmul(Q, K, transpose_b = True) / self.scale
 		""" Q: (batch, n_heads, q_seq(=n_nodes or =1), head_depth)
 			K: (batch, n_heads, k_seq(=n_nodes), head_depth)
 			logits: (batch, n_heads, q_seq(this could be 1), k_seq)
@@ -20,6 +18,9 @@ class DotProductAttention(tf.keras.layers.Layer):
 			mask[:,None,None,:,0]: (batch, 1, 1, n_nodes) ==> broadcast depending on logits shape
 			[True] -> [1 * -np.inf], [False] -> [logits]
 		"""
+		Q, K, V = x
+		logits = tf.matmul(Q, K, transpose_b = True) / self.scale
+
 		if self.clip is not None:
 			logits = self.clip * tf.math.tanh(logits)
 			
@@ -34,8 +35,9 @@ class DotProductAttention(tf.keras.layers.Layer):
 		probs = tf.nn.softmax(logits, axis = -1)
 		return tf.matmul(probs, V)
 
+
 class MultiHeadAttention(tf.keras.layers.Layer):
-	def __init__(self, n_heads = 8, embed_dim = 128, clip = None, return_logits = None, spilt_Wq = None, **kwargs):
+	def __init__(self, n_heads = 8, embed_dim = 128, clip = None, return_logits = None, not_need_W = None, **kwargs):
 		super().__init__(**kwargs)
 		self.n_heads = n_heads
 		self.embed_dim = embed_dim
@@ -43,22 +45,16 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 		if self.embed_dim % self.n_heads != 0:
 			raise ValueError("embed_dim = n_heads * head_depth")
 		
-		self.return_logits = return_logits
-		self.spilt_Wq = spilt_Wq 
-		stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
-		init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)# init = tf.random_uniform_initializer(minval = -stdv, maxval= stdv)
-
+		self.not_need_W = not_need_W 
 		self.attention = DotProductAttention(clip = clip, return_logits = return_logits, head_depth = self.head_depth)
-		self.Wk = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
-		
-		if self.return_logits is None:
-			self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
-			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# (embed_dim, embed_dim)
-			if self.spilt_Wq:
-				self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# name='wq_fixed', torch.nn.Linear(embed_dim, embed_dim)
-				self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# name='wq_step', torch.nn.Linear(embed_dim, embed_dim)
-			else:
-				self.Wq = tf.keras.layers.Dense(self.embed_dim, use_bias = False, kernel_initializer = init)# torch.nn.Linear(embed_dim, embed_dim)
+		if self.not_need_W is None:
+			# stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
+			# init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)# init = tf.random_uniform_initializer(minval = -stdv, maxval= stdv)
+			self.Wk = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
+			self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
+			self.Wq = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# torch.nn.Linear(embed_dim, embed_dim)
+			self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# (embed_dim, embed_dim)
+
 			
 	def split_heads(self, T, batch):
 		""" https://qiita.com/halhorn/items/c91497522be27bde17ce
@@ -85,21 +81,21 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 			--> concat output: (batch, n_nodes, head_depth * h_heads)
 			return output: (batch, n_nodes, embed_dim)
 		"""
-		q, k, v = x
-		batch = k.shape[0]
-
-		if self.return_logits:
-			return self.attention([q, self.Wk(k), None], mask = mask)
 		
-		if self.spilt_Wq:
-			Q = self.Wq_fixed(q[:,:,:self.embed_dim]) + self.Wq_step(q[:,:,self.embed_dim:])
+		
+		if self.not_need_W:
+			Q, K, V = x
 		else:
-			Q = self.Wq(q)
+			q, k, v = x
+			Q, K, V = self.Wq(q), self.Wk(k), self.Wv(v)
 
-		K, V = self.Wk(k), self.Wv(v)	
+		batch = K.shape[0]	
 		output = self.attention([self.split_heads(T, batch) for T in [Q, K, V]], mask = mask)
 		output = self.combine_heads(output, batch)
+		if self.not_need_W:
+			return output
 		return self.Wout(output)
+
 
 if __name__ == '__main__':
 	mha = MultiHeadAttention(n_heads = 8, embed_dim = 128, name = 'MHA')

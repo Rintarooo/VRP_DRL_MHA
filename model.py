@@ -2,24 +2,18 @@ import tensorflow as tf
 
 from data import generate_data
 from encoder import GraphAttentionEncoder
-# from decoder_backup import GraphAttentionDecoder
 from decoder import DecoderCell
 
 class AttentionModel(tf.keras.models.Model):
 	
-	def __init__(self, embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10.):
+	def __init__(self, embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512):
 		super().__init__()
-		if embed_dim % n_heads != 0:
-			raise ValueError("embed_dim = n_heads * head_depth")
-
-		self.Encoder = GraphAttentionEncoder(embed_dim, n_heads, n_encode_layers, 512)
-		# self.Decoder = GraphAttentionDecoder(embed_dim, n_heads, tanh_clipping)
+		
+		self.Encoder = GraphAttentionEncoder(embed_dim, n_heads, n_encode_layers, FF_hidden)
 		self.Decoder = DecoderCell(embed_dim, n_heads, tanh_clipping)
 
 	def call(self, x, training = True, return_pi = False, decode_type = 'greedy'):
 		encoder_output = self.Encoder(x, training = training)
-		node_embeddings, graph_embedding = encoder_output
-		# decoder_output = self.Decoder(x, node_embeddings, graph_embedding, decode_type = decode_type)
 		decoder_output = self.Decoder(x, encoder_output, return_pi = return_pi, decode_type = decode_type)
 		if return_pi:
 			cost, ll, pi = decoder_output
