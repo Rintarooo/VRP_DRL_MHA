@@ -5,7 +5,7 @@ batch,512
 batch_steps,2500
 batch_verbose,10
 n_rollout_samples,10000
-epochs,30
+epochs,20
 embed_dim,128
 n_heads,8
 tanh_clipping,10.0
@@ -19,6 +19,6 @@ weight_dir,./Weights/
 pkl_dir,./Pkl/
 cuda_dv,0
 task,VRP20_train
-dump_date,0723_00_13
+dump_date,0726_03_41
 pkl_path,./Pkl/VRP20_train.pkl
 n_samples,1280000
