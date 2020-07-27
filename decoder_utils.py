@@ -48,14 +48,16 @@ class Env():
 		mask_customer = capacity_over_customer[:, :, None] | self.visited_customer
 
 		# print('mask_customer[0]', mask_customer[0])
-		# mask_depot = tf.math.logical_not(tf.reduce_all(mask_customer, axis = 1))
-		# mask_depot = self.is_next_depot | tf.reduce_all(mask_customer, axis = 1)
 		mask_depot = self.is_next_depot & (tf.reduce_sum(tf.cast(mask_customer == False, tf.int32), axis = 1) > 0)
 		# print('mask_depot', mask_depot[0])
 
-		""" We can choose depot if 1) we are not in depot or 2) all nodes are visited
+		""" # mask_depot = tf.math.logical_not(tf.reduce_all(mask_customer, axis = 1))
 			tf.reduce_all: if there's any False on the specified axis, return False
-			if all customer nodes are True, mask_depot should be False so that the vehicle returns back to depot 
+			# mask_depot = self.is_next_depot | tf.reduce_all(mask_customer, axis = 1)
+			We can choose depot if 1) we are not in depot or 2) all nodes are visited
+			if the mask for customer nodes are all True, mask_depot should be False so that the vehicle can return back to depot 
+			even if some of the mask for customer nodes are False, mask_depot should be False so that vehicle could go back to the depot
+			the vechile must not be at the depot in a low but it can stay at the depot when the mask for customer nodes are all True
 		"""
 		return tf.concat([mask_depot[:, None, :], mask_customer], axis = 1), D
 	

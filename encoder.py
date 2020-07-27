@@ -42,8 +42,8 @@ class EncoderLayer(tf.keras.layers.Layer):
 			tf.keras.models.Sequential([
 					# tf.keras.layers.Dense(self.FF_hidden, use_bias = True, activation = self.activation, kernel_initializer = init, bias_initializer = init),
 					# tf.keras.layers.Dense(input_shape[2], use_bias = True, kernel_initializer = init, bias_initializer = init)
-					tf.keras.layers.Dense(self.FF_hidden, activation = self.activation),
-					tf.keras.layers.Dense(input_shape[2])
+					tf.keras.layers.Dense(self.FF_hidden, use_bias = True, activation = self.activation),
+					tf.keras.layers.Dense(input_shape[2], use_bias = True)
 			]),
 			self.BN2
 		)
@@ -62,8 +62,8 @@ class GraphAttentionEncoder(tf.keras.models.Model):
 		# init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
 		# self.init_W_depot = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(2, embedding_dim)
 		# self.init_W = tf.keras.layers.Dense(embed_dim, use_bias = True, kernel_initializer = init, bias_initializer = init)# torch.nn.Linear(3, embedding_dim)
-		self.init_W_depot = tf.keras.layers.Dense(embed_dim)# torch.nn.Linear(2, embedding_dim)
-		self.init_W = tf.keras.layers.Dense(embed_dim)# torch.nn.Linear(3, embedding_dim)
+		self.init_W_depot = tf.keras.layers.Dense(embed_dim, use_bias = True)# torch.nn.Linear(2, embedding_dim)
+		self.init_W = tf.keras.layers.Dense(embed_dim, use_bias = True)# torch.nn.Linear(3, embedding_dim)
 		self.encoder_layers = [EncoderLayer(n_heads, FF_hidden) for _ in range(n_layers)]
 	
 	@tf.function

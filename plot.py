@@ -14,9 +14,7 @@ def get_clean_path(arr):
 	"""
 	p1, p2 = 0, 1
 	output = []
-
 	while p2 < len(arr):
-
 		if arr[p1] != arr[p2]:
 			output.append(arr[p1])
 			if p2 == len(arr) - 1:
@@ -25,12 +23,12 @@ def get_clean_path(arr):
 		p2 += 1
 
 	if output[0] != 0:
-		output.insert(0, 0.0)
+		output.insert(0, 0)# insert 0 in 0th of the array
 	if output[-1] != 0:
-		output.append(0.0)
+		output.append(0)# insert 0 at the end of the array
 	return output
 
-def get_journey(data, pi, title, idx_in_batch = 0):
+def plot_route(data, pi, title, cost, idx_in_batch = 0):
 	"""Plots journey of agent
 	Args:
 		data: dataset of graphs
@@ -41,14 +39,13 @@ def get_journey(data, pi, title, idx_in_batch = 0):
 	# Remove extra zeros
 	pi_ = get_clean_path(pi[idx_in_batch].numpy())
 
-	# Unpack variables
-	depo_coord = data[0][idx_in_batch].numpy()
-	points_coords = data[1][idx_in_batch].numpy()
+	depot_xy = data[0][idx_in_batch].numpy()
+	customer_xy = data[1][idx_in_batch].numpy()
 	demands = data[2][idx_in_batch].numpy()
-	node_labels = ['(' + str(x[0]) + ', ' + x[1] + ')' for x in enumerate(demands.round(2).astype(str))]
-
-	# Concatenate depot and points
-	full_coords = np.concatenate((depo_coord.reshape(1, 2), points_coords))
+	# customer_labels = ['(' + str(i) + ', ' + str(demand) + ')' for i, demand in enumerate(demands.round(2), 1)]
+	customer_labels = ['(' + str(demand) + ')' for demand in demands.round(2)]
+	
+	xy = np.concatenate([depot_xy.reshape(1, 2), customer_xy], axis = 0)
 
 	# Get list with agent loops in path
 	list_of_paths, cur_path = [], []
@@ -62,48 +59,54 @@ def get_journey(data, pi, title, idx_in_batch = 0):
 			list_of_paths.append(cur_path)
 			cur_path = []
 
-	list_of_path_traces = []
-	for path_counter, path in enumerate(list_of_paths):
-		coords = full_coords[[int(x) for x in path]]
+	path_traces = []
+	for i, path in enumerate(list_of_paths, 1):
+		coords = xy[[int(x) for x in path]]
 
 		# Calculate length of each agent loop
 		lengths = np.sqrt(np.sum(np.diff(coords, axis = 0) ** 2, axis = 1))
 		total_length = np.sum(lengths)
 
-		list_of_path_traces.append(go.Scatter(x = coords[:, 0],
-											  y = coords[:, 1],
-											  mode = "markers+lines",
-											  name = f"path_{path_counter}, length = {total_length:.2f}",
-											  opacity = 1.0))
+		path_traces.append(go.Scatter(x = coords[:, 0],
+									y = coords[:, 1],
+									mode = 'markers+lines',
+									name = f'tour{i} Length = {total_length:.3f}',
+									opacity = 1.0))
 
-	trace_points = go.Scatter(x = points_coords[:, 0],
-							  y = points_coords[:, 1],
-							  mode = 'markers+text',
-							  name = 'customer',
-							  text = node_labels,
+	trace_points = go.Scatter(x = customer_xy[:, 0],
+							  y = customer_xy[:, 1],
+							  mode = 'markers+text', 
+							  name = 'Customer (demand)',
+							  text = customer_labels,
 							  textposition = 'top center',
 							  marker = dict(size = 7),
 							  opacity = 1.0
 							  )
 
-	trace_depo = go.Scatter(x = [depo_coord[0]],
-							y = [depo_coord[1]],
-							text = ['1.0'], textposition = 'bottom center',
+	trace_depo = go.Scatter(x = [depot_xy[0]],
+							y = [depot_xy[1]],
 							mode = 'markers+text',
-							marker = dict(size = 15),
-							name = 'depot'
+							name = 'Depot (capacity = 1.0)',
+							text = ['1.0'],
+							textposition = 'bottom center',
+							marker = dict(size = 23),
+							marker_symbol = 'triangle-up'
 							)
-
-	layout = go.Layout(title = '<b>Example: {}</b>'.format(title),
-					   xaxis = dict(title = 'X coordinate'),
-					   yaxis = dict(title = 'Y coordinate'),
+	
+	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost.numpy():.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
+					   # xaxis = dict(title = 'X', ticks='outside'),
+					   # yaxis = dict(title = 'Y', ticks='outside'),#https://kamino.hatenablog.com/entry/plotly_for_report
+					   xaxis = dict(title = 'X', range = [0, 1], showgrid=False, ticks='outside', linewidth=1, mirror=True),
+					   yaxis = dict(title = 'Y', range = [0, 1], showgrid=False, ticks='outside', linewidth=1, mirror=True),
 					   showlegend = True,
-					   width = 1000,
-					   height = 1000,
-					   template = "plotly_white"
+					   width = 750,
+					   height = 700,
+					   autosize = True,
+					   template = "plotly_white",
+					   legend = dict(x = 1, xanchor = 'right', y =0, yanchor = 'bottom', bordercolor = '#444', borderwidth = 0)
 					   )
 
-	data = [trace_points, trace_depo] + list_of_path_traces
+	data = [trace_points, trace_depo] + path_traces
 	print('Current path: ', pi_)
 	fig = go.Figure(data = data, layout = layout)
 	fig.show()
@@ -111,12 +114,14 @@ def get_journey(data, pi, title, idx_in_batch = 0):
 if __name__ == '__main__':
 	model = AttentionModel()
 	pretrained = load_model(file_parser().path)
-	dataset = generate_data(n_customer = 20)
-	for i, data in enumerate(dataset.batch(10)):
+	# dataset = generate_data(n_samples = 1, n_customer = 50, seed = 3) 
+	# for i, data in enumerate(dataset.repeat().batch(100)):
+	dataset = generate_data(n_samples = 128, n_customer = 50, seed = 17) 
+	for i, data in enumerate(dataset.batch(128)):
 		cost, _, pi = pretrained(data, return_pi = True)
 		idx_min = tf.argmin(cost, axis = 0)
-		get_journey(data, pi, 'pretrained model', idx_min)
+		plot_route(data, pi, 'Pretrained', cost[idx_min], idx_min)
 		cost, _, pi = model(data, return_pi = True)
-		get_journey(data, pi, 'untrained model', idx_min)
+		plot_route(data, pi, 'Untrained', cost[idx_min], idx_min)
 		if i == 0:
 			break
