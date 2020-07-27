@@ -1,5 +1,7 @@
 # TF2 CVRP solver with Multi Heads Attention 
 
+<img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="600"/>
+
 TensorFlow implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https://arxiv.org/pdf/1803.08475.pdf)
 
 ## Desciption
@@ -36,6 +38,4 @@ Plot prediction of the pretrained model
 ```
 python plot.py -p './Weights/***.h5'
 ```
-
-<img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="600"/>
 
