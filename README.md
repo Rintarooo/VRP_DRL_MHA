@@ -37,6 +37,5 @@ Plot prediction of the pretrained model
 python plot.py -p './Weights/***.h5'
 ```
 
-![VRP20 Pretrained](https://user-images.githubusercontent.com/51239551/88505529-adace780-d012-11ea-8247-efa9e604ff10.gif)
-
+<img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="600"/>
 
