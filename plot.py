@@ -104,6 +104,7 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 					   autosize = True,
 					   template = "plotly_white",
 					   legend = dict(x = 1, xanchor = 'right', y =0, yanchor = 'bottom', bordercolor = '#444', borderwidth = 0)
+					   # legend = dict(x = 0, xanchor = 'left', y =0, yanchor = 'bottom', bordercolor = '#444', borderwidth = 0)
 					   )
 
 	data = [trace_points, trace_depo] + path_traces
@@ -116,7 +117,7 @@ if __name__ == '__main__':
 	pretrained = load_model(file_parser().path)
 	# dataset = generate_data(n_samples = 1, n_customer = 50, seed = 3) 
 	# for i, data in enumerate(dataset.repeat().batch(100)):
-	dataset = generate_data(n_samples = 128, n_customer = 50, seed = 17) 
+	dataset = generate_data(n_samples = 128, n_customer = 50, seed = 153) 
 	for i, data in enumerate(dataset.batch(128)):
 		cost, _, pi = pretrained(data, return_pi = True)
 		idx_min = tf.argmin(cost, axis = 0)
