@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 from model import AttentionModel
-from data import generate_data
+from data import generate_data, data_from_txt
 from baseline import load_model
 from config import file_parser
 
@@ -108,15 +108,18 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 					   )
 
 	data = [trace_points, trace_depo] + path_traces
-	print('Current path: ', pi_)
+	print('path: ', pi_)
 	fig = go.Figure(data = data, layout = layout)
 	fig.show()
 
 if __name__ == '__main__':
 	model = AttentionModel()
 	pretrained = load_model(file_parser().path)
+
 	# dataset = generate_data(n_samples = 1, n_customer = 50, seed = 3) 
+	# dataset = data_from_txt('./OpenData/A-n45-k7.txt')
 	# for i, data in enumerate(dataset.repeat().batch(100)):
+	
 	dataset = generate_data(n_samples = 128, n_customer = 50, seed = 153) 
 	for i, data in enumerate(dataset.batch(128)):
 		cost, _, pi = pretrained(data, return_pi = True)
