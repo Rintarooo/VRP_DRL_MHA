@@ -24,7 +24,6 @@ class Env():
 		self.is_next_depot = tf.ones([self.batch, 1], dtype = tf.bool)
 		self.visited_customer = tf.zeros((self.batch, self.n_nodes-1, 1), dtype = tf.bool)
 
-	# @tf.function
 	def get_mask_D(self, next_node, visited_mask, D):
 		""" next_node: ([[0],[0],[not 0], ...], (batch, 1), dtype = tf.int32), [0] denotes going to depot
 			visited_mask **includes depot**: (batch, n_nodes, 1)
@@ -40,9 +39,7 @@ class Env():
 		 	return mask: (batch, n_nodes, 1)		
 		"""
 		self.is_next_depot = next_node == 0
-		# tf.print(type(self.is_next_depot))
-		# tf.print(self.visited_customer[0])
-		D = tf.where(self.is_next_depot, tf.ones_like(D), D)
+		D = tf.where(self.is_next_depot, 1.0, D)
 		self.visited_customer = self.visited_customer | visited_mask[:,1:,:]
 		customer_idx = tf.argmax(tf.cast(visited_mask[:,1:,:], tf.int32), axis = 1)
 		selected_demand = tf.gather(params = self.demand, indices = customer_idx, batch_dims = 1)
@@ -72,7 +69,7 @@ class Env():
 		one_hot = tf.one_hot(indices = next_node, depth = self.n_nodes)		
 		visited_mask = tf.transpose(tf.cast(one_hot, dtype = tf.bool), (0,2,1))
 		mask, D = self.get_mask_D(next_node, visited_mask, D)
-		# self.demand = tf.where(self.visited_customer[:,:,0], tf.zeros_like(self.demand), self.demand)
+		self.demand = tf.where(self.visited_customer[:,:,0], 0.0, self.demand)
 		# prev_node_embedding = tf.matmul(one_hot, self.node_embeddings)
 		prev_node_embedding = tf.gather(self.node_embeddings, indices = next_node, batch_dims = 1)
 

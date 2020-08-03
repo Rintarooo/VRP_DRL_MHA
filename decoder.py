@@ -23,7 +23,7 @@ class DecoderCell(tf.keras.models.Model):
 		# SHA ==> Single Head Attention, because this layer n_heads = 1 which means no need to spilt heads
 		self.env = Env
 	
-	@tf.function
+	# @tf.function
 	def compute_static(self, node_embeddings, graph_embedding):
 		Q_fixed = self.Wq_fixed(graph_embedding[:,None,:])
 		K1 = self.Wk1(node_embeddings)
@@ -40,7 +40,7 @@ class DecoderCell(tf.keras.models.Model):
 		logits = self.SHA([Q2, K2, None], mask = mask)
 		return tf.squeeze(logits, axis = 1)
 		
-	
+	# @tf.function
 	def call(self, x, encoder_output, return_pi = False, decode_type = 'sampling'):
 		""" context: (batch, 1, 2*embed_dim+1)
 			tf.concat([graph embedding[:,None,:], previous node embedding, remaining vehicle capacity[:,:,None]], axis = -1)
@@ -75,9 +75,10 @@ class DecoderCell(tf.keras.models.Model):
 	
 			tours = tours.write(i, tf.squeeze(next_node, axis = 1))
 			log_ps = log_ps.write(i, log_p)
+			# tf.print(type(env.visited_customer))
 
-			if tf.reduce_all(env.visited_customer):
-				break
+			# if tf.reduce_all(env.visited_customer):
+			# 	break
 
 		pi = tf.transpose(tours.stack(), perm = (1,0))
 		ll = env.get_log_likelihood(tf.transpose(log_ps.stack(), perm = (1,0,2)), pi)

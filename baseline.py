@@ -157,8 +157,7 @@ class RolloutBaseline:
 		print(f'Epoch {self.cur_epoch} candidate mean {candidate_mean}, baseline mean {self.mean}')
 
 		if candidate_mean < self.mean:
-			# statistic + p-value
-			t, p = ttest_rel(candidate_vals, self.bl_vals)
+			t, p = ttest_rel(candidate_vals, self.bl_vals)# scipy.stats.ttest_rel
 
 			p_val = p / 2
 			print(f'p-value: {p_val}')
