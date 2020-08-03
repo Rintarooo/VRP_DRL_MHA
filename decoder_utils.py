@@ -127,4 +127,3 @@ class CategoricalSampler(Sampler):
 	def call(self, logits):
 		return tf.random.categorical(logits, self.n_samples, dtype = tf.int32)
 
-		

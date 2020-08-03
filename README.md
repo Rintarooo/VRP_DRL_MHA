@@ -1,12 +1,15 @@
 # TF2 CVRP solver with Multi Heads Attention 
 
-<img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="600"/>
+<img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="650"/>
+
+<img src="https://user-images.githubusercontent.com/51239551/88507610-bfdd5480-d017-11ea-99de-e9850e6be0db.gif" width="650"/>
 
 TensorFlow implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https://arxiv.org/pdf/1803.08475.pdf)
 
-## Desciption
+## Description
 
-[Slide Share -- CVRP solver with Multi Heads Attention --](https://www.slideshare.net/RINTAROSATO4/cvrp-solver-with-multi-head-attention?ref=https://www.slideshare.net/RINTAROSATO4/slideshelf)
+[Slide Share -- CVRP solver with Multi Heads Attention --](https://www.slideshare.net/RINTAROSATO4/cvrp-solver-with-multihead-attention)
+
 
 ## Dependencies
 
