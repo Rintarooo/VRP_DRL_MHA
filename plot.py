@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+from time import time
 
 from model import AttentionModel
 from data import generate_data, data_from_txt
@@ -113,6 +114,7 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 	fig.show()
 
 if __name__ == '__main__':
+	t1 = time()
 	model = AttentionModel()
 	pretrained = load_model(file_parser().path)
 
@@ -120,7 +122,7 @@ if __name__ == '__main__':
 	# dataset = data_from_txt('./OpenData/A-n45-k7.txt')
 	# for i, data in enumerate(dataset.repeat().batch(100)):
 	
-	dataset = generate_data(n_samples = 128, n_customer = 100, seed = 123) 
+	dataset = generate_data(n_samples = 128, n_customer = 100, seed = 29) 
 	for i, data in enumerate(dataset.batch(128)):
 		cost, _, pi = pretrained(data, return_pi = True)
 		# idx_min = tf.argmin(cost, axis = 0)
@@ -130,3 +132,4 @@ if __name__ == '__main__':
 		# plot_route(data, pi, 'Untrained', cost[idx_min], idx_min)
 		if i == 0:
 			break
+	print(f'{time()-t1}s')

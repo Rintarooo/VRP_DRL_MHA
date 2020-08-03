@@ -4,6 +4,8 @@
 
 <img src="https://user-images.githubusercontent.com/51239551/88507610-bfdd5480-d017-11ea-99de-e9850e6be0db.gif" width="650"/>
 
+<img src="https://user-images.githubusercontent.com/51239551/89150677-0ee83400-d59a-11ea-90ed-2852dc1ddd4b.gif" width="650"/>
+
 TensorFlow implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https://arxiv.org/pdf/1803.08475.pdf)
 
 ## Description
