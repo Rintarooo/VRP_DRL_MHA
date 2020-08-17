@@ -7,19 +7,16 @@ from data import generate_data
 class DecoderCell(tf.keras.models.Model):
 	def __init__(self, embed_dim = 128, n_heads = 8, clip = 10., **kwargs):
 		super().__init__(**kwargs)
-		self.n_heads = n_heads
-		self.embed_dim = embed_dim
-		self.clip = clip
-
-		self.Wk1 = tf.keras.layers.Dense(self.embed_dim, use_bias = False)# torch.nn.Linear(embed_dim, embed_dim, bias = False)
-		self.Wv = tf.keras.layers.Dense(self.embed_dim, use_bias = False)
-		self.Wk2 = tf.keras.layers.Dense(self.embed_dim, use_bias = False)
-		self.Wq_fixed = tf.keras.layers.Dense(self.embed_dim, use_bias = False)
-		self.Wout = tf.keras.layers.Dense(self.embed_dim, use_bias = False)
-		self.Wq_step = tf.keras.layers.Dense(self.embed_dim, use_bias = False)
 		
-		self.MHA = MultiHeadAttention(n_heads = self.n_heads, embed_dim = embed_dim, need_W = False)
-		self.SHA = DotProductAttention(clip = clip, return_logits = True, head_depth = self.embed_dim)
+		self.Wk1 = tf.keras.layers.Dense(embed_dim, use_bias = False)# torch.nn.Linear(embed_dim, embed_dim, bias = False)
+		self.Wv = tf.keras.layers.Dense(embed_dim, use_bias = False)
+		self.Wk2 = tf.keras.layers.Dense(embed_dim, use_bias = False)
+		self.Wq_fixed = tf.keras.layers.Dense(embed_dim, use_bias = False)
+		self.Wout = tf.keras.layers.Dense(embed_dim, use_bias = False)
+		self.Wq_step = tf.keras.layers.Dense(embed_dim, use_bias = False)
+		
+		self.MHA = MultiHeadAttention(n_heads = n_heads, embed_dim = embed_dim, need_W = False)
+		self.SHA = DotProductAttention(clip = clip, return_logits = True, head_depth = embed_dim)
 		# SHA ==> Single Head Attention, because this layer n_heads = 1 which means no need to spilt heads
 		self.env = Env
 	

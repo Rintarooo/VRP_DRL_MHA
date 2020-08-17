@@ -1,4 +1,4 @@
-# TF2 CVRP solver with Multi Heads Attention 
+# CVRP solver with Multi Heads Attention in TF2, Torch
 
 <img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="650"/>
 
@@ -6,7 +6,7 @@
 
 <img src="https://user-images.githubusercontent.com/51239551/89150677-0ee83400-d59a-11ea-90ed-2852dc1ddd4b.gif" width="650"/>
 
-TensorFlow implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https://arxiv.org/pdf/1803.08475.pdf)
+TensorFlow and PyTorch implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https://arxiv.org/pdf/1803.08475.pdf)
 
 ## Description
 
@@ -16,7 +16,8 @@ TensorFlow implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https:/
 ## Dependencies
 
 * Python >= 3.6
-* TensorFlow = 2.1
+* TensorFlow >= 2.0
+* PyTorch = 1.5
 * tqdm
 * scipy
 * numpy

@@ -108,8 +108,9 @@ class Env():
 		"""
 		d = tf.gather(self.xy, indices = pi, batch_dims = 1)
 		return (tf.reduce_sum(tf.norm(d[:, 1:] - d[:, :-1], ord=2, axis=2), axis=1)
-					+ tf.norm(d[:, 0] - self.depot_xy, ord=2, axis=1)# distance from depot to first selected node
-					+ tf.norm(d[:, -1] - self.depot_xy, ord=2, axis=1))# distance from last selected node (!=0 for graph with longest path) to depot
+				+ tf.norm(d[:, 0] - self.depot_xy, ord=2, axis=1)# distance from depot to first selected node
+				+ tf.norm(d[:, -1] - self.depot_xy, ord=2, axis=1)# distance from last selected node (!=0 for graph with longest path) to depot
+				)
 
 
 
