@@ -42,7 +42,6 @@ def train(cfg, log_path = None):
 			loss.backward()
 			# https://github.com/wouterkool/attention-learn-to-route/blob/master/train.py
 			# https://github.com/Rintarooo/TSP_DRL_PointerNet/blob/master/train.py
-			# grads = nn.utils.clip_grad_norm_(grads, max_norm = 1.0, norm_type = 2)
 			nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1.0, norm_type = 2)
 			optimizer.step()
 			

@@ -22,7 +22,6 @@ class Generator(Dataset):
 	""" https://github.com/utkuozbulak/pytorch-custom-dataset-examples
 		https://github.com/wouterkool/attention-learn-to-route/blob/master/problems/vrp/problem_vrp.py
 	"""
-	# def __init__(self, batch = 512, batch_steps = 10, n_customer = 20, seed = None):
 	def __init__(self, n_samples = 5120, n_customer = 20, seed = None):
 		# n_samples = batch * batch_steps
 		if seed is not None:
@@ -47,7 +46,6 @@ if __name__ == '__main__':
 
 	batch = 512
 	batch_steps = 10
-	# dataset = Generator(batch = batch, batch_steps = batch_steps)
 	dataset = Generator(n_samples = batch*batch_steps)
 	
 	# data = next(iter(dataset))
