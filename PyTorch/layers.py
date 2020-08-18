@@ -41,7 +41,6 @@ class DotProductAttention(nn.Module):
 			return logits
 
 		if mask is not None:
-			# pass
 			# mask = mask.unsqueeze(1)
 			logits = logits.masked_fill(mask[:,None,None,:,0] == True, -self.inf)
 			

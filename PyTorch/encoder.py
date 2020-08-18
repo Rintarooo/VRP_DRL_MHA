@@ -80,9 +80,8 @@ class EncoderLayer(nn.Module):
 		"""	arg x: (batch, n_nodes, embed_dim)
 			return: (batch, n_nodes, embed_dim)
 		"""
-		# return self.FF_sublayer(self.MHA_sublayer(x, mask = mask))
-		return self.MHA_sublayer(x, mask = mask)
-
+		return self.FF_sublayer(self.MHA_sublayer(x, mask = mask))
+		
 class GraphAttentionEncoder(nn.Module):
 	def __init__(self, embed_dim = 128, n_heads = 8, n_layers = 3, FF_hidden = 512):
 		super().__init__()
