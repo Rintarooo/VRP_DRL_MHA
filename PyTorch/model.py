@@ -38,4 +38,8 @@ if __name__ == '__main__':
 	else:
 		print(output[0])# cost: (batch,)
 		print(output[1])# ll: (batch,)
-	
+
+	for i, k in model.state_dict().items():
+		print(k.requires_grad)
+		print(i, k.size(), torch.numel(k))
+	print(model.Decoder.Wk1.weight.data.grad)

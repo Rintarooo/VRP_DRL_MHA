@@ -120,7 +120,7 @@ if __name__ == '__main__':
 	output = encoder(data, mask = None)
 	print('output[0].shape:', output[0].size())
 	print('output[1].shape', output[1].size())
-
+	
 	# summary(encoder, [(2), (20,2), (20)])
 	for i, k in encoder.state_dict().items():
 		print(k.requires_grad)

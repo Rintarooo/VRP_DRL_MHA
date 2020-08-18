@@ -40,7 +40,8 @@ def train(cfg, log_path = None):
 
 			optimizer.zero_grad()
 			loss.backward()
-			print('loss.grad: ', loss.grad)
+
+			print('grad: ', model.Decoder.Wk1.weight.data.grad)
 			# https://github.com/wouterkool/attention-learn-to-route/blob/master/train.py
 			# https://github.com/Rintarooo/TSP_DRL_PointerNet/blob/master/train.py
 			nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1.0, norm_type = 2)
