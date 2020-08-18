@@ -116,6 +116,7 @@ class Env():
 		"""
 		# d = torch.gather(input = self.xy, dim = 1, index = pi)
 		d = torch.gather(input = self.xy, dim = 1, index = pi[:,:,None].repeat(1,1,2))
+		d.requires_grad = True
 		return (torch.sum((d[:, 1:] - d[:, :-1]).norm(p = 2, dim = 2), dim = 1)
 				+ (d[:, 0] - self.depot_xy).norm(p = 2, dim = 1)# distance from depot to first selected node
 				+ (d[:, -1] - self.depot_xy).norm(p = 2, dim = 1)# distance from last selected node (!=0 for graph with longest path) to depot
@@ -133,12 +134,19 @@ class Sampler(nn.Module):
 		self.n_samples = n_samples
 		
 class TopKSampler(Sampler):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+	
 	def forward(self, logits):
 		return torch.topk(logits, self.n_samples, dim = 1)[1]
 
 class CategoricalSampler(Sampler):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+
 	def forward(self, logits):
 		# from torch.distributions import Categorical
 		# m = Categorical(probs = logits)
 		# return m.sample(sample_shape = (self.n_samples, )).transpose(-1,-2)
-		return logits.exp().multinomial(self.n_samples)
+		# return logits.exp().multinomial(self.n_samples, out = logits)
+		return torch.multinomial(logits.exp(), self.n_samples)

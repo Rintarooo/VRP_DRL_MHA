@@ -48,6 +48,10 @@ class DecoderCell(nn.Module):
 			logits = self._compute_mha(Q_fixed, step_context, K1, V, K2, mask)
 			log_p = torch.log_softmax(logits, dim = -1)
 			next_node = selecter(log_p)
+			# next_node = torch.argmax(log_p, dim=1).unsqueeze(-1)
+			
+			# next_node = torch.topk(logits, 1, dim = 1)[1]
+			# print(next_node.requires_grad)
 			mask, step_context, D = env._get_step(next_node, D)
 
 			tours.append(next_node.squeeze(1))
@@ -55,7 +59,7 @@ class DecoderCell(nn.Module):
 			if env.visited_customer.all():
 				break
 
-		pi = torch.stack(tours, 1)	
+		pi = torch.stack(tours, 1)
 		cost = env.get_costs(pi)
 		ll = env.get_log_likelihood(torch.stack(log_ps, 1), pi)
 		
@@ -75,8 +79,14 @@ if __name__ == '__main__':
 	# a = graph_embedding[:,None,:].repeat(1, 7, 1)
 	# print(a.size())
 
+	decoder.train()
 	cost, ll, pi = decoder(data, encoder_output, return_pi = True, decode_type = 'sampling')
 	print('\ncost: ', cost.size(), cost)
 	print('\nll: ', ll.size(), ll)
 	print('\npi: ', pi.size(), pi)
+
+	ll.mean().backward()
+	print(decoder.Wk1.weight.data.grad)
+
+
 	

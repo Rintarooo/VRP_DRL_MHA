@@ -25,6 +25,7 @@ class AttentionModel(nn.Module):
 if __name__ == '__main__':
 	
 	model = AttentionModel()
+	model.train()
 	data = generate_data(n_samples = 5, n_customer = 20, seed = 123)
 	return_pi = True
 	output = model(data, decode_type = 'sampling', return_pi = return_pi)
@@ -39,7 +40,9 @@ if __name__ == '__main__':
 		print(output[0])# cost: (batch,)
 		print(output[1])# ll: (batch,)
 
-	for i, k in model.state_dict().items():
-		print(k.requires_grad)
-		print(i, k.size(), torch.numel(k))
+	# for i, k in model.state_dict().items():
+	# 	print(k.requires_grad)
+	# 	print(i, k.size(), torch.numel(k))
+
+	# output[0].backward()
 	print(model.Decoder.Wk1.weight.data.grad)
