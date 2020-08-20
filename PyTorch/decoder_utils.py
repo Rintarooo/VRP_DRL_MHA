@@ -45,18 +45,10 @@ class Env():
 		D = D - selected_demand * (1.0 - self.is_next_depot.float())
 		capacity_over_customer = self.demand > D
 		mask_customer = capacity_over_customer[:,:,None] | self.visited_customer
-
-		# print('mask_customer[0]', mask_customer[0])
 		mask_depot = self.is_next_depot & (torch.sum((mask_customer == False).type(torch.long), dim = 1) > 0)
-		# print('mask_depot', mask_depot[0])
 
-		""" # mask_depot = tf.math.logical_not(tf.reduce_all(mask_customer, axis = 1))
-			tf.reduce_all: if there's any False on the specified axis, return False
-			# mask_depot = self.is_next_depot | tf.reduce_all(mask_customer, axis = 1)
-			We can choose depot if 1) we are not in depot or 2) all nodes are visited
-			if the mask for customer nodes are all True, mask_depot should be False so that the vehicle can return back to depot 
-			even if some of the mask for customer nodes are False, mask_depot should be False so that vehicle could go back to the depot
-			the vechile must not be at the depot in a low but it can stay at the depot when the mask for customer nodes are all True
+		""" mask_depot = True
+			==> We cannot choose depot in the next step if 1) next destination is depot or 2) there is a node which has not been visited yet
 		"""
 		return torch.cat([mask_depot[:,None,:], mask_customer], dim = 1), D
 	
@@ -119,12 +111,11 @@ class Env():
 				+ (d[:, -1] - self.depot_xy).norm(p = 2, dim = 1)# distance from last selected node (!=0 for graph with longest path) to depot
 				)
 
-
-
 class Sampler(nn.Module):
-	""" logits: (batch, n_nodes)
-			TopKSampler <-- greedy; sample one with biggest probability
-			CategoricalSampler <-- sampling; randomly sample one from possible distribution based on probability
+	""" args; logits: (batch, n_nodes)
+		return; next_node: (batch, 1)
+		TopKSampler <=> greedy; sample one with biggest probability
+		CategoricalSampler <=> sampling; randomly sample one from possible distribution based on probability
 	"""
 	def __init__(self, n_samples = 1, **kwargs):
 		super().__init__(**kwargs)
@@ -132,7 +123,7 @@ class Sampler(nn.Module):
 		
 class TopKSampler(Sampler):
 	def forward(self, logits):
-		return torch.topk(logits, self.n_samples, dim = 1)[1]
+		return torch.topk(logits, self.n_samples, dim = 1)[1]# == torch.argmax(log_p, dim = 1).unsqueeze(-1)
 
 class CategoricalSampler(Sampler):
 	def forward(self, logits):

@@ -41,16 +41,14 @@ class DecoderCell(nn.Module):
 		Q_fixed, K1, V, K2 = self.compute_static(node_embeddings, graph_embedding)
 		env = Env(x, node_embeddings)
 		mask, step_context, D = env._create_t1()
-		
+
 		selecter = {'greedy': TopKSampler(), 'sampling': CategoricalSampler()}.get(decode_type, None)
 		log_ps, tours = [], []	
 		for i in range(env.n_nodes*2):
 			logits = self._compute_mha(Q_fixed, step_context, K1, V, K2, mask)
 			log_p = torch.log_softmax(logits, dim = -1)
 			next_node = selecter(log_p)
-			# next_node = torch.argmax(log_p, dim = 1).unsqueeze(-1)
 			mask, step_context, D = env._get_step(next_node, D)
-
 			tours.append(next_node.squeeze(1))
 			log_ps.append(log_p)
 			if env.visited_customer.all():
@@ -89,7 +87,4 @@ if __name__ == '__main__':
 
 	# ll.mean().backward()
 	# print(decoder.Wk1.weight.grad)
-	# https://discuss.pytorch.org/t/model-param-grad-is-none-how-to-debug/52634
-
-
-	
+	# https://discuss.pytorch.org/t/model-param-grad-is-none-how-to-debug/52634	

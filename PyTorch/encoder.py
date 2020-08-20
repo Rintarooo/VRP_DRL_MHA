@@ -62,15 +62,14 @@ class EncoderLayer(nn.Module):
 		super().__init__(**kwargs)
 		self.n_heads = n_heads
 		self.FF_hidden = FF_hidden
-		# self.BN1 = Normalization(embed_dim, normalization = 'batch')
-		# self.BN2 = Normalization(embed_dim, normalization = 'batch')
+		self.BN1 = Normalization(embed_dim, normalization = 'batch')
+		self.BN2 = Normalization(embed_dim, normalization = 'batch')
 
 		self.MHA_sublayer = ResidualBlock_BN(
 				SelfAttention(
 					MultiHeadAttention(n_heads = self.n_heads, embed_dim = embed_dim, need_W = True)
 				),
-			# self.BN1
-			Normalization(embed_dim, normalization = 'batch')
+			self.BN1
 			)
 
 		self.FF_sublayer = ResidualBlock_BN(
@@ -79,9 +78,7 @@ class EncoderLayer(nn.Module):
 					nn.ReLU(),
 					nn.Linear(FF_hidden, embed_dim, bias = True)
 			),
-			# self.BN2
-			# self.BN1
-			Normalization(embed_dim, normalization = 'batch')
+			self.BN2
 		)
 		
 	def forward(self, x, mask=None):
@@ -93,11 +90,8 @@ class EncoderLayer(nn.Module):
 class GraphAttentionEncoder(nn.Module):
 	def __init__(self, embed_dim = 128, n_heads = 8, n_layers = 3, FF_hidden = 512):
 		super().__init__()
-		# stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
-		# init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
 		self.init_W_depot = torch.nn.Linear(2, embed_dim, bias = True)
 		self.init_W = torch.nn.Linear(3, embed_dim, bias = True)
-		# self.encoder_layers = [EncoderLayer(n_heads, FF_hidden, embed_dim) for _ in range(n_layers)]
 		self.encoder_layers = nn.ModuleList([EncoderLayer(n_heads, FF_hidden, embed_dim) for _ in range(n_layers)])
 	
 	def forward(self, x, mask = None):
