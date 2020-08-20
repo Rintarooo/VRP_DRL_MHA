@@ -40,9 +40,10 @@ if __name__ == '__main__':
 		print(output[0])# cost: (batch,)
 		print(output[1])# ll: (batch,)
 
-	# for i, k in model.state_dict().items():
-	# 	print(k.requires_grad)
-	# 	print(i, k.size(), torch.numel(k))
+	for i, k in model.state_dict().items():
+		# print(k.requires_grad)
+		print(i, k.size(), torch.numel(k))
 
-	# output[0].backward()
-	print(model.Decoder.Wk1.weight.data.grad)
+	output[1].mean().backward()
+	print(model.Decoder.Wout.weight.grad)
+	print(model.Encoder.init_W_depot.weight.grad)

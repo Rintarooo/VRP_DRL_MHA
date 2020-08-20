@@ -81,8 +81,7 @@ class RolloutBaseline:
 			self.M = cost.mean()
 		else:
 			self.M = self.beta * self.M + (1. - self.beta) * cost.mean()
-		# return self.M
-		return self.M.detach()
+		return self.M
 
 	def eval(self, batch, cost):
 		"""Evaluates current baseline model on single training batch
@@ -138,22 +137,34 @@ class RolloutBaseline:
 			print(f'alpha was updated to {self.alpha}')
 
 	def copy_model(self, model):
+		""" Copy model weights to new model
+			https://stackoverflow.com/questions/56841736/how-to-copy-a-network-in-tensorflow-2-0
+		"""
+		# small_data = generate_data(n_samples = 5, n_customer = n_customer)
+		# new_model = AttentionModel(embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
+		# small_data = list(map(lambda x: x.to(self.device), small_data))
+		# new_model = new_model.to(self.device)
+		# model = model.to(self.device)
+		# with torch.no_grad():
+		# 	_, _ = new_model(small_data, decode_type = 'sampling')
+			
+		# net2.load_state_dict(net1.state_dict())
 		new_model = copy.deepcopy(model)
 		return new_model
 
-	# def load_model(self, path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
-	# 	""" Load model weights from hd5 file
-	# 		https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
-	# 	"""
-	# 	# small_data = generate_data(n_samples = 5, n_customer = n_customer)
-	# 	# small_data = list(map(lambda x: x.to(self.device), small_data))
-	# 	# model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
-	# 	model_loaded = model_loaded.to(self.device)
-	# 	# with torch.no_grad():
-	# 	# 	_, _ = model_loaded(small_data, decode_type = 'greedy')
+	def load_model(self, path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
+		""" Load model weights from hd5 file
+			https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
+		"""
+		# small_data = generate_data(n_samples = 5, n_customer = n_customer)
+		# small_data = list(map(lambda x: x.to(self.device), small_data))
+		# model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
+		model_loaded = model_loaded.to(self.device)
+		# with torch.no_grad():
+		# 	_, _ = model_loaded(small_data, decode_type = 'greedy')
 
-	# 	model_loaded.load_state_dict(torch.load(path))
-	# 	return model_loaded
+		model_loaded.load_state_dict(torch.load(path))
+		return model_loaded
 
 	def rollout(self, model, dataset, batch = 1000, disable_tqdm = False):
 		costs_list = []

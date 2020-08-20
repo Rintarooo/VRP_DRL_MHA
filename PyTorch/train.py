@@ -11,12 +11,11 @@ from data import generate_data, Generator
 from config import Config, load_pkl, file_parser
 
 def train(cfg, log_path = None):
-
 	def rein_loss(model, inputs, bs, t, device):
 		inputs = list(map(lambda x: x.to(device), inputs))
 		L, ll = model(inputs, decode_type = 'sampling')
 		b = bs[t] if bs is not None else baseline.eval(inputs, L)
-		return ((L - b.detach().to(device)) * ll).mean(), L.mean()
+		return ((L - b.to(device)) * ll).mean(), L.mean()
 	
 	model = AttentionModel(cfg.embed_dim, cfg.n_encode_layers, cfg.n_heads, cfg.tanh_clipping)
 	model.train()
@@ -28,7 +27,7 @@ def train(cfg, log_path = None):
 	
 	t1 = time()
 	for epoch in range(cfg.epochs):
-		ave_loss, ave_L = 0.0, 0.0
+		ave_loss, ave_L = 0., 0.
 		dataset = Generator(cfg.batch*cfg.batch_steps, cfg.n_customer)
 		
 		bs = baseline.eval_all(dataset)
@@ -36,24 +35,22 @@ def train(cfg, log_path = None):
 		
 		dataloader = DataLoader(dataset, batch_size = cfg.batch, shuffle = True)
 		for t, inputs in enumerate(dataloader):
+			
 			loss, L_mean = rein_loss(model, inputs, bs, t, device)
-
 			optimizer.zero_grad()
 			loss.backward()
-
-			print('grad: ', model.Decoder.Wk1.weight.data.grad)
+			# print('grad: ', model.Decoder.Wk1.weight.grad[0][0])
 			# https://github.com/wouterkool/attention-learn-to-route/blob/master/train.py
-			# https://github.com/Rintarooo/TSP_DRL_PointerNet/blob/master/train.py
 			nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1.0, norm_type = 2)
 			optimizer.step()
 			
-			ave_loss = loss.item()
-			ave_L = L_mean.item()
+			ave_loss += loss.item()
+			ave_L += L_mean.item()
 			
 			if t%(cfg.batch_verbose) == 0:
 				t2 = time()
 				print('Epoch %d (batch = %d): Loss: %1.3f L: %1.3f, %dmin%dsec'%(
-					epoch, t, ave_loss, ave_L, (t2-t1)//60, (t2-t1)%60))
+					epoch, t, ave_loss/(t+1), ave_L/(t+1), (t2-t1)//60, (t2-t1)%60))
 				if cfg.islogger:
 					if log_path is None:
 						log_path = '%s%s_%s.csv'%(cfg.log_dir, cfg.task, cfg.dump_date)#cfg.log_dir = ./Csv/
@@ -61,7 +58,7 @@ def train(cfg, log_path = None):
 							f.write('time,epoch,batch,loss,cost\n')
 					with open(log_path, 'a') as f:
 						f.write('%dmin%dsec,%d,%d,%1.3f,%1.3f\n'%(
-							(t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss, ave_L))
+							(t2-t1)//60, (t2-t1)%60, epoch, t, ave_loss/(t+1), ave_L/(t+1)))
 				t1 = time()
 
 		baseline.epoch_callback(model, epoch)

@@ -24,25 +24,16 @@ class DotProductAttention(nn.Module):
 		logits = torch.matmul(Q, K.transpose(-1,-2)) / self.scale
 
 		if self.clip is not None:
-			logits = self.clip * self.tanh(logits)
+			# logits = self.clip * self.tanh(logits)
+			logits = self.clip * torch.tanh(logits)
 			
 		if self.return_logits:
 			if mask is not None:
-			# print('mask.size():', mask.size())
-			# print('logits.size():', logits.size())
-				# print(logits[0])
-				# logits = logits.masked_fill(mask.permute(0,2,1) == True, -self.inf)
-				# print(logits[0])
-				# return logits
 				return logits.masked_fill(mask.permute(0,2,1) == True, -self.inf)
-			# mask = mask.unsqueeze(1)
-			#logits = logits.masked_fill(mask == 0, -self.inf)
-			# 	logits = tf.where(tf.transpose(mask, perm=(0, 2, 1)), tf.ones_like(logits) * (-np.inf), logits)
 			return logits
 
 		if mask is not None:
-			# mask = mask.unsqueeze(1)
-			logits = logits.masked_fill(mask[:,None,None,:,0] == True, -self.inf)
+			logits = logits.masked_fill(mask[:,None,None,:,0].repeat(1,logits.size(1),1,1) == True, -self.inf)
 			
 		probs = torch.softmax(logits, dim = -1)
 		return torch.matmul(probs, V)

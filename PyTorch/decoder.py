@@ -41,17 +41,14 @@ class DecoderCell(nn.Module):
 		Q_fixed, K1, V, K2 = self.compute_static(node_embeddings, graph_embedding)
 		env = Env(x, node_embeddings)
 		mask, step_context, D = env._create_t1()
-
+		
 		selecter = {'greedy': TopKSampler(), 'sampling': CategoricalSampler()}.get(decode_type, None)
 		log_ps, tours = [], []	
 		for i in range(env.n_nodes*2):
 			logits = self._compute_mha(Q_fixed, step_context, K1, V, K2, mask)
 			log_p = torch.log_softmax(logits, dim = -1)
 			next_node = selecter(log_p)
-			# next_node = torch.argmax(log_p, dim=1).unsqueeze(-1)
-			
-			# next_node = torch.topk(logits, 1, dim = 1)[1]
-			# print(next_node.requires_grad)
+			# next_node = torch.argmax(log_p, dim = 1).unsqueeze(-1)
 			mask, step_context, D = env._get_step(next_node, D)
 
 			tours.append(next_node.squeeze(1))
@@ -66,7 +63,6 @@ class DecoderCell(nn.Module):
 		if return_pi:
 			return cost, ll, pi
 		return cost, ll
-
 
 if __name__ == '__main__':
 	batch, n_nodes, embed_dim = 5, 21, 128
@@ -85,8 +81,15 @@ if __name__ == '__main__':
 	print('\nll: ', ll.size(), ll)
 	print('\npi: ', pi.size(), pi)
 
+	cnt = 0
+	for i, k in decoder.state_dict().items():
+		print(i, k.size(), torch.numel(k))
+		cnt += torch.numel(k)
+	print(cnt)
+
 	ll.mean().backward()
-	print(decoder.Wk1.weight.data.grad)
+	print(decoder.Wk1.weight.grad)
+	# https://discuss.pytorch.org/t/model-param-grad-is-none-how-to-debug/52634
 
 
 	

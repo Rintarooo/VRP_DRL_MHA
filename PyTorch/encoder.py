@@ -15,12 +15,12 @@ class Normalization(nn.Module):
 			'instance': nn.InstanceNorm1d}.get(normalization, None)
 		self.normalizer = normalizer_class(embed_dim, affine=True)
 		# Normalization by default initializes affine parameters with bias 0 and weight unif(0,1) which is too large!
-		# self.init_parameters()
+		self.init_parameters()
 
-	# def init_parameters(self):
-	# 	for name, param in self.named_parameters():
-	# 		stdv = 1. / math.sqrt(param.size(-1))
-	# 		param.data.uniform_(-stdv, stdv)
+	def init_parameters(self):
+		for name, param in self.named_parameters():
+			stdv = 1. / math.sqrt(param.size(-1))
+			param.data.uniform_(-stdv, stdv)
 
 	def forward(self, x):
 
@@ -58,14 +58,15 @@ class EncoderLayer(nn.Module):
 		super().__init__(**kwargs)
 		self.n_heads = n_heads
 		self.FF_hidden = FF_hidden
-		self.BN1 = Normalization(embed_dim, normalization = 'batch')
-		self.BN2 = Normalization(embed_dim, normalization = 'batch')
+		# self.BN1 = Normalization(embed_dim, normalization = 'batch')
+		# self.BN2 = Normalization(embed_dim, normalization = 'batch')
 
 		self.MHA_sublayer = ResidualBlock_BN(
 				SelfAttention(
 					MultiHeadAttention(n_heads = self.n_heads, embed_dim = embed_dim, need_W = True)
 				),
-			self.BN1
+			# self.BN1
+			Normalization(embed_dim, normalization = 'batch')
 			)
 
 		self.FF_sublayer = ResidualBlock_BN(
@@ -74,7 +75,9 @@ class EncoderLayer(nn.Module):
 					nn.ReLU(),
 					nn.Linear(FF_hidden, embed_dim, bias = True)
 			),
-			self.BN2
+			# self.BN2
+			# self.BN1
+			Normalization(embed_dim, normalization = 'batch')
 		)
 		
 	def forward(self, x, mask=None):
@@ -114,7 +117,7 @@ class GraphAttentionEncoder(nn.Module):
 if __name__ == '__main__':
 	batch = 5
 	n_nodes = 21
-	encoder = GraphAttentionEncoder()
+	encoder = GraphAttentionEncoder(n_layers = 1)
 	data = generate_data(n_samples = batch, n_customer = n_nodes-1)
 	# mask = torch.zeros((batch, n_nodes, 1), dtype = bool)
 	output = encoder(data, mask = None)
@@ -122,7 +125,12 @@ if __name__ == '__main__':
 	print('output[1].shape', output[1].size())
 	
 	# summary(encoder, [(2), (20,2), (20)])
+	cnt = 0
 	for i, k in encoder.state_dict().items():
-		print(k.requires_grad)
 		print(i, k.size(), torch.numel(k))
+		cnt += torch.numel(k)
+	print(cnt)
+
+	# output[0].mean().backward()
+	# print(encoder.init_W_depot.weight.grad)
 
