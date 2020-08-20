@@ -38,11 +38,11 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 	"""
 
 	# Remove extra zeros
-	pi_ = get_clean_path(pi[idx_in_batch].numpy())
+	pi_ = get_clean_path(pi[idx_in_batch].cpu().numpy())
 
-	depot_xy = data[0][idx_in_batch].numpy()
-	customer_xy = data[1][idx_in_batch].numpy()
-	demands = data[2][idx_in_batch].numpy()
+	depot_xy = data[0][idx_in_batch].cpu().numpy()
+	customer_xy = data[1][idx_in_batch].cpu().numpy()
+	demands = data[2][idx_in_batch].cpu().numpy()
 	# customer_labels = ['(' + str(i) + ', ' + str(demand) + ')' for i, demand in enumerate(demands.round(2), 1)]
 	customer_labels = ['(' + str(demand) + ')' for demand in demands.round(2)]
 	
@@ -94,7 +94,7 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 							marker_symbol = 'triangle-up'
 							)
 	
-	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost.numpy():.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
+	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost.cpu().numpy():.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
 					   # xaxis = dict(title = 'X', ticks='outside'),
 					   # yaxis = dict(title = 'Y', ticks='outside'),#https://kamino.hatenablog.com/entry/plotly_for_report
 					   xaxis = dict(title = 'X', range = [0, 1], showgrid=False, ticks='outside', linewidth=1, mirror=True),
@@ -115,7 +115,6 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 
 if __name__ == '__main__':
 	args = test_parser()
-	t1 = time()
 	pretrained = load_model(args.path, embed_dim = 128, n_customer = args.n_customer, n_encode_layers = 3)
 	data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed) 
 	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -123,6 +122,7 @@ if __name__ == '__main__':
 	data = list(map(lambda x: x.to(device), data))
 	pretrained.eval()
 	with torch.no_grad():
+		t1 = time()
 		cost, _, pi = pretrained(data, return_pi = True)
 	plot_route(data, pi, 'Pretrained', cost[0], 0)
 	# model = AttentionModel(embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
