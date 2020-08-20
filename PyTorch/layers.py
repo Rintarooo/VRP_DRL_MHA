@@ -55,6 +55,19 @@ class MultiHeadAttention(nn.Module):
 			self.Wq = nn.Linear(embed_dim, embed_dim, bias = False)
 			self.Wout = nn.Linear(embed_dim, embed_dim, bias = False)
 
+		self.init_parameters()
+	
+	def init_parameters(self):
+		for name, param in self.named_parameters():
+			# print(name)
+			if name == 'Wout.weight':
+				stdv = 1. / math.sqrt(param.size(-1))
+			elif name in ['Wk.weight', 'Wv.weight', 'Wq.weight']:
+				stdv = 1. / math.sqrt(self.head_depth)
+			else:
+				raise ValueError
+			param.data.uniform_(-stdv, stdv)
+
 	def split_heads(self, T):
 		""" https://qiita.com/halhorn/items/c91497522be27bde17ce
 			T: (batch, n_nodes, self.embed_dim)

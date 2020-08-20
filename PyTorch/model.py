@@ -30,20 +30,20 @@ if __name__ == '__main__':
 	return_pi = True
 	output = model(data, decode_type = 'sampling', return_pi = return_pi)
 	if return_pi:
-		# print(output[0].size())# cost: (batch)
-		# print(output[1].size())# ll: (batch, 1)
-		# print(output[2].size())# pi: (batch, decode_step) # tour
-		print(output[0])
-		print(output[1])
-		print(output[2])
+		cost, ll, pi = output
+		print('\ncost: ', cost.size(), cost)
+		print('\nll: ', ll.size(), ll)
+		print('\npi: ', pi.size(), pi)
 	else:
-		print(output[0])# cost: (batch,)
-		print(output[1])# ll: (batch,)
+		print(output[0])# cost: (batch)
+		print(output[1])# ll: (batch)
 
+	cnt = 0
 	for i, k in model.state_dict().items():
-		# print(k.requires_grad)
 		print(i, k.size(), torch.numel(k))
+		cnt += torch.numel(k)
+	print('total parameters:', cnt)
 
-	output[1].mean().backward()
-	print(model.Decoder.Wout.weight.grad)
-	print(model.Encoder.init_W_depot.weight.grad)
+	# output[1].mean().backward()
+	# print(model.Decoder.Wout.weight.grad)
+	# print(model.Encoder.init_W_depot.weight.grad)

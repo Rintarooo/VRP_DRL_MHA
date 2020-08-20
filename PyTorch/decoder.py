@@ -81,14 +81,14 @@ if __name__ == '__main__':
 	print('\nll: ', ll.size(), ll)
 	print('\npi: ', pi.size(), pi)
 
-	cnt = 0
-	for i, k in decoder.state_dict().items():
-		print(i, k.size(), torch.numel(k))
-		cnt += torch.numel(k)
-	print(cnt)
+	# cnt = 0
+	# for i, k in decoder.state_dict().items():
+	# 	print(i, k.size(), torch.numel(k))
+	# 	cnt += torch.numel(k)
+	# print(cnt)
 
-	ll.mean().backward()
-	print(decoder.Wk1.weight.grad)
+	# ll.mean().backward()
+	# print(decoder.Wk1.weight.grad)
 	# https://discuss.pytorch.org/t/model-param-grad-is-none-how-to-debug/52634
 
 

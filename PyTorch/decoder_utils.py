@@ -8,17 +8,17 @@ class Env():
 			customer_xy: (batch, n_nodes-1, 2)
 			--> self.xy: (batch, n_nodes, 2), Coordinates of depot + customer nodes
 			demand: (batch, n_nodes-1)
-			
+			node_embeddings: (batch, n_nodes, embed_dim)
+
 			is_next_depot: (batch, 1), e.g., [[True], [True], ...]
 			Nodes that have been visited will be marked with True.
 		"""
 		self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 		self.depot_xy, customer_xy, self.demand = x
 		self.depot_xy, customer_xy, self.demand = self.depot_xy.to(self.device), customer_xy.to(self.device), self.demand.to(self.device)
-		self.xy = torch.cat([self.depot_xy[:, None, :], customer_xy], 1).to(self.device)
-		self.batch, self.n_nodes, _ = self.xy.size()
+		self.xy = torch.cat([self.depot_xy[:,None,:], customer_xy], 1).to(self.device)
 		self.node_embeddings = node_embeddings
-		self.embed_dim = node_embeddings.size(-1)
+		self.batch, self.n_nodes, self.embed_dim = node_embeddings.size()
 
 		self.is_next_depot = torch.ones([self.batch, 1], dtype = torch.bool).to(self.device)
 		self.visited_customer = torch.zeros((self.batch, self.n_nodes-1, 1), dtype = torch.bool).to(self.device)
@@ -100,9 +100,11 @@ class Env():
 		return torch.cat([depot_embedding, D_t1[:,:,None]], dim = -1), D_t1
 
 	def get_log_likelihood(self, _log_p, pi):
-		# Get log_p corresponding to selected actions
-		log_p = torch.gather(input = _log_p, dim = -1, index = pi[:,:,None])
-		return torch.sum(log_p, 1)
+		""" _log_p: (batch, decode_step, n_nodes)
+			pi: (batch, decode_step), predicted tour
+		"""
+		log_p = torch.gather(input = _log_p, dim = 2, index = pi[:,:,None])
+		return torch.sum(log_p.squeeze(-1), 1)
 
 	def get_costs(self, pi):
 		""" self.xy: (batch, n_nodes, 2), Coordinates of depot + customer nodes
@@ -129,13 +131,9 @@ class Sampler(nn.Module):
 		self.n_samples = n_samples
 		
 class TopKSampler(Sampler):
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)	
 	def forward(self, logits):
 		return torch.topk(logits, self.n_samples, dim = 1)[1]
 
 class CategoricalSampler(Sampler):
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
 	def forward(self, logits):
 		return torch.multinomial(logits.exp(), self.n_samples)

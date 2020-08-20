@@ -49,6 +49,8 @@ class Generator(Dataset):
 	"""
 	def __init__(self, n_samples = 5120, n_customer = 20, seed = None):
 		# n_samples = batch * batch_steps
+		if torch.cuda.is_available():
+			torch.cuda.synchronize()
 		if seed is not None:
 			# self.data_list = [generate_data(1, n_customer, seed+i) for i in range(n_samples)]
 			self.data_list = [generate_data(1, n_customer, seed+i) for i in tqdm(range(n_samples), disable = False, desc = 'Generate input data')]

@@ -1,232 +1,140 @@
 import torch
-import numpy as np
-from torch import nn
-import math
+import torch.nn as nn
+# from torchsummary import summary
 
+from layers import MultiHeadAttention
 from data import generate_data
-
-
-class SkipConnection(nn.Module):
-
-	def __init__(self, module):
-		super(SkipConnection, self).__init__()
-		self.module = module
-
-	def forward(self, input):
-		return input + self.module(input)
-
-
-class MultiHeadAttention(nn.Module):
-	def __init__(
-			self,
-			n_heads,
-			input_dim,
-			embed_dim=None,
-			val_dim=None,
-			key_dim=None
-	):
-		super(MultiHeadAttention, self).__init__()
-
-		if val_dim is None:
-			assert embed_dim is not None, "Provide either embed_dim or val_dim"
-			val_dim = embed_dim // n_heads
-		if key_dim is None:
-			key_dim = val_dim
-
-		self.n_heads = n_heads
-		self.input_dim = input_dim
-		self.embed_dim = embed_dim
-		self.val_dim = val_dim
-		self.key_dim = key_dim
-
-		self.norm_factor = 1 / math.sqrt(key_dim)  # See Attention is all you need
-
-		self.W_query = nn.Parameter(torch.Tensor(n_heads, input_dim, key_dim))
-		self.W_key = nn.Parameter(torch.Tensor(n_heads, input_dim, key_dim))
-		self.W_val = nn.Parameter(torch.Tensor(n_heads, input_dim, val_dim))
-
-		if embed_dim is not None:
-			self.W_out = nn.Parameter(torch.Tensor(n_heads, key_dim, embed_dim))
-
-		self.init_parameters()
-
-	def init_parameters(self):
-
-		for param in self.parameters():
-			stdv = 1. / math.sqrt(param.size(-1))
-			param.data.uniform_(-stdv, stdv)
-
-	def forward(self, q, h=None, mask=None):
-		"""
-
-		:param q: queries (batch_size, n_query, input_dim)
-		:param h: data (batch_size, graph_size, input_dim)
-		:param mask: mask (batch_size, n_query, graph_size) or viewable as that (i.e. can be 2 dim if n_query == 1)
-		Mask should contain 1 if attention is not possible (i.e. mask is negative adjacency)
-		:return:
-		"""
-		if h is None:
-			h = q  # compute self-attention
-
-		# h should be (batch_size, graph_size, input_dim)
-		batch_size, graph_size, input_dim = h.size()
-		n_query = q.size(1)
-		assert q.size(0) == batch_size
-		assert q.size(2) == input_dim
-		assert input_dim == self.input_dim, "Wrong embedding dimension of input"
-
-		hflat = h.contiguous().view(-1, input_dim)
-		qflat = q.contiguous().view(-1, input_dim)
-
-		# last dimension can be different for keys and values
-		shp = (self.n_heads, batch_size, graph_size, -1)
-		shp_q = (self.n_heads, batch_size, n_query, -1)
-
-		# Calculate queries, (n_heads, n_query, graph_size, key/val_size)
-		Q = torch.matmul(qflat, self.W_query).view(shp_q)
-		# Calculate keys and values (n_heads, batch_size, graph_size, key/val_size)
-		K = torch.matmul(hflat, self.W_key).view(shp)
-		V = torch.matmul(hflat, self.W_val).view(shp)
-
-		# Calculate compatibility (n_heads, batch_size, n_query, graph_size)
-		compatibility = self.norm_factor * torch.matmul(Q, K.transpose(2, 3))
-
-		# Optionally apply mask to prevent attention
-		if mask is not None:
-			mask = mask.view(1, batch_size, n_query, graph_size).expand_as(compatibility)
-			compatibility[mask] = -np.inf
-
-		attn = torch.softmax(compatibility, dim=-1)
-
-		# If there are nodes with no neighbours then softmax returns nan so we fix them to 0
-		if mask is not None:
-			attnc = attn.clone()
-			attnc[mask] = 0
-			attn = attnc
-
-		heads = torch.matmul(attn, V)
-
-		out = torch.mm(
-			heads.permute(1, 2, 0, 3).contiguous().view(-1, self.n_heads * self.val_dim),
-			self.W_out.view(-1, self.embed_dim)
-		).view(batch_size, n_query, self.embed_dim)
-
-		return out
-
+import math
 
 class Normalization(nn.Module):
 
-	def __init__(self, embed_dim, normalization='batch'):
-		super(Normalization, self).__init__()
+	def __init__(self, embed_dim, normalization = 'batch'):
+		super().__init__()
 
 		normalizer_class = {
 			'batch': nn.BatchNorm1d,
-			'instance': nn.InstanceNorm1d
-		}.get(normalization, None)
-
+			'instance': nn.InstanceNorm1d}.get(normalization, None)
 		self.normalizer = normalizer_class(embed_dim, affine=True)
-
 		# Normalization by default initializes affine parameters with bias 0 and weight unif(0,1) which is too large!
-		# self.init_parameters()
+	# 	self.init_parameters()
 
-	def init_parameters(self):
+	# def init_parameters(self):
+	# 	for name, param in self.named_parameters():
+	# 		stdv = 1. / math.sqrt(param.size(-1))
+	# 		param.data.uniform_(-stdv, stdv)
 
-		for name, param in self.named_parameters():
-			stdv = 1. / math.sqrt(param.size(-1))
-			param.data.uniform_(-stdv, stdv)
-
-	def forward(self, input):
+	def forward(self, x):
 
 		if isinstance(self.normalizer, nn.BatchNorm1d):
-			return self.normalizer(input.view(-1, input.size(-1))).view(*input.size())
+			# (batch, num_features)
+			# https://discuss.pytorch.org/t/batch-normalization-of-linear-layers/20989
+			return self.normalizer(x.view(-1, x.size(-1))).view(*x.size())
+		
 		elif isinstance(self.normalizer, nn.InstanceNorm1d):
-			return self.normalizer(input.permute(0, 2, 1)).permute(0, 2, 1)
+			return self.normalizer(x.permute(0, 2, 1)).permute(0, 2, 1)
 		else:
 			assert self.normalizer is None, "Unknown normalizer type"
-			return input
+			return x
 
 
-class MultiHeadAttentionLayer(nn.Sequential):
+class ResidualBlock_BN(nn.Module):
+	def __init__(self, MHA, BN, **kwargs):
+		super().__init__(**kwargs)
+		self.MHA = MHA
+		self.BN = BN
 
-	def __init__(
-			self,
-			n_heads,
-			embed_dim,
-			feed_forward_hidden=512,
-			normalization='batch',
-	):
-		super(MultiHeadAttentionLayer, self).__init__(
-			SkipConnection(
-				MultiHeadAttention(
-					n_heads,
-					input_dim=embed_dim,
-					embed_dim=embed_dim
-				)
-			),
-			Normalization(embed_dim, normalization),
-			SkipConnection(
-				nn.Sequential(
-					nn.Linear(embed_dim, feed_forward_hidden),
+	def forward(self, x, mask = None):
+		if mask is None:
+			return self.BN(x + self.MHA(x))
+		return self.BN(x + self.MHA(x, mask))
+
+class SelfAttention(nn.Module):
+	def __init__(self, MHA, **kwargs):
+		super().__init__(**kwargs)
+		self.MHA = MHA
+
+	def forward(self, x, mask = None):
+		return self.MHA([x, x, x], mask = mask)
+
+class EncoderLayer(nn.Module):
+	# nn.Sequential):
+	def __init__(self, n_heads = 8, FF_hidden = 512, embed_dim = 128, **kwargs):
+		super().__init__(**kwargs)
+		self.n_heads = n_heads
+		self.FF_hidden = FF_hidden
+		# self.BN1 = Normalization(embed_dim, normalization = 'batch')
+		# self.BN2 = Normalization(embed_dim, normalization = 'batch')
+
+		self.MHA_sublayer = ResidualBlock_BN(
+				SelfAttention(
+					MultiHeadAttention(n_heads = self.n_heads, embed_dim = embed_dim, need_W = True)
+				),
+			# self.BN1
+			Normalization(embed_dim, normalization = 'batch')
+			)
+
+		self.FF_sublayer = ResidualBlock_BN(
+			nn.Sequential(
+					nn.Linear(embed_dim, FF_hidden, bias = True),
 					nn.ReLU(),
-					nn.Linear(feed_forward_hidden, embed_dim)
-				) if feed_forward_hidden > 0 else nn.Linear(embed_dim, embed_dim)
+					nn.Linear(FF_hidden, embed_dim, bias = True)
 			),
-			Normalization(embed_dim, normalization)
-		)
-
-
-class GraphAttentionEncoder(nn.Module):
-	def __init__(
-			self,
-			embed_dim,
-			n_heads,
-			n_layers,
-			node_dim=None,
-			normalization='batch',
-			feed_forward_hidden=512
-	):
-		super(GraphAttentionEncoder, self).__init__()
-
-		# To map input to embedding space
-		# self.init_embed = nn.Linear(node_dim, embed_dim) if node_dim is not None else None
-		self.init_W_depot = torch.nn.Linear(2, embed_dim, bias = True)
-		self.init_W = torch.nn.Linear(3, embed_dim, bias = True)
-
-		self.layers = nn.Sequential(*(
-			MultiHeadAttentionLayer(n_heads, embed_dim, feed_forward_hidden, normalization)
-			for _ in range(n_layers)
-		))
-
-	def forward(self, x, mask=None):
-
-		assert mask is None, "TODO mask not yet supported!"
-
-		# Batch multiply to get initial embeddings of nodes
-		x = torch.cat([self.init_W_depot(x[0])[:, None, :],
-				self.init_W(torch.cat([x[1], x[2][:, :, None]], dim = -1))], dim = 1)
-
-		x = self.layers(x)
-
-		return (
-			x,  # (batch_size, graph_size, embed_dim)
-			x.mean(dim=1),  # average to get embedding of graph, (batch_size, embed_dim)
+			# self.BN2
+			# self.BN1
+			Normalization(embed_dim, normalization = 'batch')
 		)
 		
+	def forward(self, x, mask=None):
+		"""	arg x: (batch, n_nodes, embed_dim)
+			return: (batch, n_nodes, embed_dim)
+		"""
+		return self.FF_sublayer(self.MHA_sublayer(x, mask = mask))
+		
+class GraphAttentionEncoder(nn.Module):
+	def __init__(self, embed_dim = 128, n_heads = 8, n_layers = 3, FF_hidden = 512):
+		super().__init__()
+		# stdv = 1./tf.math.sqrt(tf.cast(embed_dim, tf.float32))
+		# init = tf.keras.initializers.RandomUniform(minval = -stdv, maxval = stdv)
+		self.init_W_depot = torch.nn.Linear(2, embed_dim, bias = True)
+		self.init_W = torch.nn.Linear(3, embed_dim, bias = True)
+		# self.encoder_layers = [EncoderLayer(n_heads, FF_hidden, embed_dim) for _ in range(n_layers)]
+		self.encoder_layers = nn.ModuleList([EncoderLayer(n_heads, FF_hidden, embed_dim) for _ in range(n_layers)])
+	
+	def forward(self, x, mask = None):
+		""" x[0] -- depot_xy: (batch, 2) --> embed_depot_xy: (batch, embed_dim)
+			x[1] -- customer_xy: (batch, n_nodes-1, 2)
+			x[2] -- demand: (batch, n_nodes-1)
+			--> concated_customer_feature: (batch, n_nodes-1, 3) --> embed_customer_feature: (batch, n_nodes-1, embed_dim)
+			embed_x(batch, n_nodes, embed_dim)
+
+			return: (node embeddings(= embedding for all nodes), graph embedding(= mean of node embeddings for graph))
+				=((batch, n_nodes, embed_dim), (batch, embed_dim))
+		"""
+		x = torch.cat([self.init_W_depot(x[0])[:, None, :],
+				self.init_W(torch.cat([x[1], x[2][:, :, None]], dim = -1))], dim = 1)
+	
+		for layer in self.encoder_layers:
+			x = layer(x, mask)
+
+		return (x, torch.mean(x, dim = 1))
+
 if __name__ == '__main__':
-	encoder = GraphAttentionEncoder(
-			n_heads=8,
-			embed_dim=128,
-			n_layers=1,
-			node_dim=None,
-			normalization='batch',
-			feed_forward_hidden=512)
+	batch = 5
+	n_nodes = 21
+	encoder = GraphAttentionEncoder(n_layers = 1)
+	data = generate_data(n_samples = batch, n_customer = n_nodes-1)
+	# mask = torch.zeros((batch, n_nodes, 1), dtype = bool)
+	output = encoder(data, mask = None)
+	print('output[0].shape:', output[0].size())
+	print('output[1].shape', output[1].size())
+	
+	# summary(encoder, [(2), (20,2), (20)])
 	cnt = 0
 	for i, k in encoder.state_dict().items():
 		print(i, k.size(), torch.numel(k))
 		cnt += torch.numel(k)
 	print(cnt)
 
-	inputs = generate_data()
-	output = encoder(inputs)
-
+	# output[0].mean().backward()
+	# print(encoder.init_W_depot.weight.grad)
 

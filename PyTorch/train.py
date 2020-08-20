@@ -11,6 +11,7 @@ from data import generate_data, Generator
 from config import Config, load_pkl, file_parser
 
 def train(cfg, log_path = None):
+	torch.backends.cudnn.benchmark = True
 	def rein_loss(model, inputs, bs, t, device):
 		inputs = list(map(lambda x: x.to(device), inputs))
 		L, ll = model(inputs, decode_type = 'sampling')
