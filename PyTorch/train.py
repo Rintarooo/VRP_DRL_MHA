@@ -8,7 +8,7 @@ from time import time
 from model import AttentionModel
 from baseline import RolloutBaseline
 from data import generate_data, Generator
-from config import Config, load_pkl, file_parser
+from config import Config, load_pkl, train_parser
 
 def train(cfg, log_path = None):
 	torch.backends.cudnn.benchmark = True
@@ -63,8 +63,8 @@ def train(cfg, log_path = None):
 				t1 = time()
 
 		baseline.epoch_callback(model, epoch)
-		torch.save(model.state_dict(), '%s%s_epoch%s.h5'%(cfg.weight_dir, cfg.task, epoch))
+		torch.save(model.state_dict(), '%s%s_epoch%s.pt'%(cfg.weight_dir, cfg.task, epoch))
 
 if __name__ == '__main__':
-	cfg = load_pkl(file_parser().path)
+	cfg = load_pkl(train_parser().path)
 	train(cfg)	

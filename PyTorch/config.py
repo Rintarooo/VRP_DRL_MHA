@@ -65,13 +65,25 @@ def load_pkl(pkl_path, verbose = True):
 		os.environ['CUDA_VISIBLE_DEVICE'] = cfg.cuda_dv
 	return cfg
 
-def file_parser():
+def train_parser():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-p', '--path', metavar = 'P', type = str, 
-						default = './Pkl/VRP20_train.pkl', help = 'file path, pkl or h5 only')
+						default = './Pkl/VRP20_train.pkl',
+						help = './Pkl/VRP***_train.pkl, pkl file only, default: ./Pkl/VRP20_train.pkl')
 	args = parser.parse_args()
 	return args
+
+def test_parser():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-p', '--path', metavar = 'P', type = str, 
+						help = './Weights/VRP***_train_epoch***.pt, pt file only')
+	parser.add_argument('-nc', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
+	parser.add_argument('-s', '--seed', metavar = 'SE', type = int, default = 123, help = 'random seed number for inference, reproducibility')
 	
+
+	args = parser.parse_args()
+	return args
+
 if __name__ == '__main__':
 	args = arg_parser()
 	dump_pkl(args)

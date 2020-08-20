@@ -9,6 +9,22 @@ from data import generate_data, Generator
 from model import AttentionModel
 
 # https://github.com/wouterkool/attention-learn-to-route/blob/master/reinforce_baselines.py
+def load_model(path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
+	# https://pytorch.org/tutorials/beginner/saving_loading_models.html
+
+	# small_data = generate_data(n_samples = 5, n_customer = n_customer)
+	# small_data = list(map(lambda x: x.to(self.device), small_data))
+	model_loaded = AttentionModel(embed_dim = embed_dim, n_encode_layers = n_encode_layers, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
+	# model_loaded = model_loaded.to(self.device)
+	# with torch.no_grad():
+	# 	_, _ = model_loaded(small_data, decode_type = 'greedy')
+	if torch.cuda.is_available():
+		model_loaded.load_state_dict(torch.load(path))
+	else:
+		model_loaded.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
+		# https://pytorch.org/docs/master/generated/torch.load.html
+	return model_loaded
+
 
 class RolloutBaseline:
 	def __init__(self, model, task, weight_dir, n_rollout_samples = 10000, 
@@ -63,7 +79,7 @@ class RolloutBaseline:
 			print('Baseline model copied')
 			self.model = self.copy_model(model)
 			# For checkpoint
-			torch.save(self.model.state_dict(), '%s%s_epoch%s.h5'%(self.weight_dir, self.task, epoch))
+			torch.save(self.model.state_dict(), '%s%s_epoch%s.pt'%(self.weight_dir, self.task, epoch))
 		
 		self.model = self.model.to(self.device)
 		# We generate a new dataset for baseline model on each baseline update to prevent possible overfitting
@@ -140,20 +156,6 @@ class RolloutBaseline:
 	def copy_model(self, model):
 		new_model = copy.deepcopy(model)
 		return new_model
-
-	# def load_model(self, path, embed_dim = 128, n_customer = 20, n_encode_layers = 3):
-	# 	""" Load model weights from hd5 file
-	# 		https://stackoverflow.com/questions/51806852/cant-save-custom-subclassed-model
-	# 	"""
-	# 	# small_data = generate_data(n_samples = 5, n_customer = n_customer)
-	# 	# small_data = list(map(lambda x: x.to(self.device), small_data))
-	# 	# model_loaded = AttentionModel(embed_dim, n_encode_layers = n_encode_layers)
-	# 	model_loaded = model_loaded.to(self.device)
-	# 	# with torch.no_grad():
-	# 	# 	_, _ = model_loaded(small_data, decode_type = 'greedy')
-
-	# 	model_loaded.load_state_dict(torch.load(path))
-	# 	return model_loaded
 
 	def rollout(self, model, dataset, batch = 1000, disable_tqdm = False):
 		costs_list = []
