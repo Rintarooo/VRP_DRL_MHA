@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
  
 if __name__ == "__main__":
-	folderName = "../../Downloads"
+	folderName = "../../Downloads/"
+	fileName = "newplot*.png"
 	if not os.path.isdir(folderName):
 		raise FileNotFoundError("check folderName")
-	picList = glob(folderName + "/newplot*.png")
+	picList = glob(folderName + fileName)
 	picList = sorted(picList)
 	print(picList)
 
