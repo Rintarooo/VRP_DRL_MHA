@@ -19,7 +19,7 @@ def arg_parser():
 	parser.add_argument('-nh', '--n_heads', metavar = 'NH', type = int, default = 8, help = 'number of heads in MHA')
 	parser.add_argument('-c', '--tanh_clipping', metavar = 'C', type = float, default = 10., help = 'improve exploration; clipping logits')
 	parser.add_argument('-ne', '--n_encode_layers', metavar = 'NE', type = int, default = 3, help = 'number of MHA encoder layers')
-	
+	parser.add_argument('-nw', '--num_workers', metavar = 'NUMW', type = int, default = 6, help = 'args num_workers in Dataloader, pytorch')
 	parser.add_argument('--lr', metavar = 'LR', type = float, default = 1e-4, help = 'initial learning rate')
 	parser.add_argument('-wb', '--warmup_beta', metavar = 'WB', type = float, default = 0.8, help = 'exponential moving average, warmup')
 	parser.add_argument('-we', '--wp_epochs', metavar = 'WE', type = int, default = 1, help = 'warmup epochs')
