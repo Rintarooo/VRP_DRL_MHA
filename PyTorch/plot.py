@@ -125,7 +125,7 @@ if __name__ == '__main__':
 	with torch.no_grad():
 		cost, _, pi = pretrained(data, return_pi = True)
 	print(f'inference time: {time()-t1}s')
-	# plot_route(data, pi, 'Pretrained', cost[0], 0)
+	plot_route(data, pi, 'Pretrained', cost[0], 0)
 	# model = AttentionModel(embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
 	# cost, _, pi = model(data, return_pi = True)
 	# plot_route(data, pi, 'Untrained', cost[idx_min], idx_min)

@@ -19,6 +19,6 @@ weight_dir,./Weights/
 pkl_dir,./Pkl/
 cuda_dv,0
 task,VRP20_train
-dump_date,0820_15_35
+dump_date,0824_19_17
 pkl_path,./Pkl/VRP20_train.pkl
 n_samples,1280000
