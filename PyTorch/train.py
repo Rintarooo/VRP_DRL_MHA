@@ -34,7 +34,7 @@ def train(cfg, log_path = None):
 		bs = baseline.eval_all(dataset)
 		bs = bs.view(-1, cfg.batch) if bs is not None else None# bs: (cfg.batch_steps, cfg.batch) or None
 		
-		dataloader = DataLoader(dataset, batch_size = cfg.batch, shuffle = True, num_workers = cfg.num_workers)
+		dataloader = DataLoader(dataset, batch_size = cfg.batch, shuffle = True)
 		for t, inputs in enumerate(dataloader):
 			
 			loss, L_mean = rein_loss(model, inputs, bs, t, device)
