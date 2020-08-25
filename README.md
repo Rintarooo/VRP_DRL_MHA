@@ -1,6 +1,6 @@
 # CVRP solver with Multi Heads Attention
 
-TensorFlow2 and PyTorch implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(https://arxiv.org/pdf/1803.08475.pdf)
+TensorFlow2 and PyTorch implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(Kool et al. 2019)(https://arxiv.org/pdf/1803.08475.pdf)
 
 <img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="650"/>
 
