@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 from model import AttentionModel
-from data import generate_data
+from data import generate_data, data_from_txt
 from baseline import load_model
 from config import test_parser
 
@@ -109,7 +109,6 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 					   )
 
 	data = [trace_points, trace_depo] + path_traces
-	print('path: ', pi_)
 	fig = go.Figure(data = data, layout = layout)
 	fig.show()
 
@@ -117,14 +116,17 @@ if __name__ == '__main__':
 	args = test_parser()
 	t1 = time()
 	pretrained = load_model(args.path, embed_dim = 128, n_customer = args.n_customer, n_encode_layers = 3)
-	data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed) 
+	if args.txt is not None:
+		data = data_from_txt(args.txt)
+	else:
+		data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed) 
 	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	pretrained = pretrained.to(device)
 	data = list(map(lambda x: x.to(device), data))
 	pretrained.eval()
 	with torch.no_grad():
 		cost, _, pi = pretrained(data, return_pi = True)
-	print(f'inference time: {time()-t1}s')
+	print(f'{pi[0]}\ninference time: {time()-t1}s')
 	plot_route(data, pi, 'Pretrained', cost[0], 0)
 	# model = AttentionModel(embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
 	# cost, _, pi = model(data, return_pi = True)

@@ -1,0 +1,10 @@
+https://neo.lcc.uma.es/vrp/vrp-instances/capacitated-vrp-instances/
+
+Augerat et al.
+Three different sets; all of them for CVRP (files format).
+
+Set A:
+Instances: 27 files
+Optimal solutions: 20 files
+Pictures of some of the problems: 6 files
+
