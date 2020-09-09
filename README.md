@@ -27,21 +27,31 @@ TensorFlow2 and PyTorch implementation of ATTENTION, LEARN TO SOLVE ROUTING PROB
 
 ## Usage
 
-First generate the pickle file contaning hyperparameter values by running the following command.
+First move to "PyTorch" or "TensorFlow2" dir. 
+
+```
+cd PyTorch
+```
+
+Then, generate the pickle file contaning hyperparameter values by running the following command.
 
 ```
 python config.py
 ```
 
-then, train the model.
+you would see the pickle file in "Pkl" dir. now you can start training the model.
 
 ```
-python train.py -p './Pkl/***.pkl'
+python train.py -p 'Pkl/***.pkl'
 ```
 
 Plot prediction of the pretrained model
 
 ```
-python plot.py -p './Weights/***.h5'
+python plot.py -p 'Weights/***.h5'
 ```
 
+If you want to verify your model, you can use opensource dataset in "OpenData" dir.
+```
+python plot.py -p 'Weights/***.h5' -t '../OpenData/A-n***.txt'
+```
