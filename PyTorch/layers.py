@@ -9,7 +9,7 @@ class DotProductAttention(nn.Module):
 		self.return_logits = return_logits
 		self.inf = inf
 		self.scale = math.sqrt(head_depth)
-		self.tanh = nn.Tanh() 
+		# self.tanh = nn.Tanh() 
 
 	def forward(self, x, mask = None):
 		""" Q: (batch, n_heads, q_seq(=n_nodes or =1), head_depth)
@@ -22,9 +22,7 @@ class DotProductAttention(nn.Module):
 		"""
 		Q, K, V = x
 		logits = torch.matmul(Q, K.transpose(-1,-2)) / self.scale
-
 		if self.clip is not None:
-			# logits = self.clip * self.tanh(logits)
 			logits = self.clip * torch.tanh(logits)
 			
 		if self.return_logits:
@@ -54,12 +52,10 @@ class MultiHeadAttention(nn.Module):
 			self.Wv = nn.Linear(embed_dim, embed_dim, bias = False)
 			self.Wq = nn.Linear(embed_dim, embed_dim, bias = False)
 			self.Wout = nn.Linear(embed_dim, embed_dim, bias = False)
-
 		self.init_parameters()
 	
 	def init_parameters(self):
 		for name, param in self.named_parameters():
-			# print(name)
 			if name == 'Wout.weight':
 				stdv = 1. / math.sqrt(param.size(-1))
 			elif name in ['Wk.weight', 'Wv.weight', 'Wq.weight']:
@@ -100,8 +96,8 @@ class MultiHeadAttention(nn.Module):
 		Q, K, V = x
 		if self.need_W:
 			Q, K, V = self.Wq(Q), self.Wk(K), self.Wv(V)
-		QKV_list = list(map(self.split_heads, [Q, K, V]))
-		output = self.attention(QKV_list, mask = mask)
+		Q, K, V = list(map(self.split_heads, [Q, K, V]))
+		output = self.attention([Q, K, V], mask = mask)
 		output = self.combine_heads(output)
 		if self.need_W:
 			return self.Wout(output)
