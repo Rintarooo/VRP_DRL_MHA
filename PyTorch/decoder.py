@@ -22,30 +22,29 @@ class DecoderCell(nn.Module):
 		self.env = Env
 
 	def compute_static(self, node_embeddings, graph_embedding):
-		Q_fixed = self.Wq_fixed(graph_embedding[:,None,:])
-		K1 = self.Wk1(node_embeddings)
-		V = self.Wv(node_embeddings)
-		K2 = self.Wk2(node_embeddings)
-		return Q_fixed, K1, V, K2
-
-	def _compute_mha(self, Q_fixed, step_context, K1, V, K2, mask):
+		self.Q_fixed = self.Wq_fixed(graph_embedding[:,None,:])
+		self.K1 = self.Wk1(node_embeddings)
+		self.V = self.Wv(node_embeddings)
+		self.K2 = self.Wk2(node_embeddings)
+		
+	def compute_dynamic(self, mask, step_context):
 		Q_step = self.Wq_step(step_context)
-		Q1 = Q_fixed + Q_step
-		Q2 = self.MHA([Q1, K1, V], mask = mask)
+		Q1 = self.Q_fixed + Q_step
+		Q2 = self.MHA([Q1, self.K1, self.V], mask = mask)
 		Q2 = self.Wout(Q2)
-		logits = self.SHA([Q2, K2, None], mask = mask)
-		return torch.squeeze(logits, dim = 1)
+		logits = self.SHA([Q2, self.K2, None], mask = mask)
+		return logits.squeeze(dim = 1)
 
 	def forward(self, x, encoder_output, return_pi = False, decode_type = 'sampling'):
 		node_embeddings, graph_embedding = encoder_output
-		Q_fixed, K1, V, K2 = self.compute_static(node_embeddings, graph_embedding)
+		self.compute_static(node_embeddings, graph_embedding)
 		env = Env(x, node_embeddings)
 		mask, step_context, D = env._create_t1()
 
 		selecter = {'greedy': TopKSampler(), 'sampling': CategoricalSampler()}.get(decode_type, None)
 		log_ps, tours = [], []	
 		for i in range(env.n_nodes*2):
-			logits = self._compute_mha(Q_fixed, step_context, K1, V, K2, mask)
+			logits = self.compute_dynamic(mask, step_context)
 			log_p = torch.log_softmax(logits, dim = -1)
 			next_node = selecter(log_p)
 			mask, step_context, D = env._get_step(next_node, D)
