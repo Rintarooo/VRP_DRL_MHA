@@ -115,11 +115,14 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 if __name__ == '__main__':
 	args = test_parser()
 	t1 = time()
+	print(f'loading time:{time()-t1}s')
 	pretrained = load_model(args.path, embed_dim = 128, n_customer = args.n_customer, n_encode_layers = 3)
+	print(f'loading time:{time()-t1}s')
 	if args.txt is not None:
 		data = data_from_txt(args.txt)
 	else:
 		data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed) 
+	print(f'generate time:{time()-t1}s')
 	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	pretrained = pretrained.to(device)
 	data = list(map(lambda x: x.to(device), data))
