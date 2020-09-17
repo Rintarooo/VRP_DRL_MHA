@@ -80,6 +80,7 @@ def test_parser():
 	parser.add_argument('-nc', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
 	parser.add_argument('-s', '--seed', metavar = 'SE', type = int, default = 123, help = 'random seed number for inference, reproducibility')
 	parser.add_argument('-t', '--txt', metavar = 'TF', type = str, help = 'if you wanna test out on text file, example: ./OpenData/A-n53-k7.txt')
+	parser.add_argument('-dt', '--decode_type', metavar = 'DT', type = str, default = 'greedy', choices = ['greedy', 'sampling'], help = 'greedy or sampling')
 	
 	args = parser.parse_args()
 	return args

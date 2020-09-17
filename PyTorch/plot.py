@@ -125,7 +125,7 @@ if __name__ == '__main__':
 	data = list(map(lambda x: x.to(device), data))
 	pretrained.eval()
 	with torch.no_grad():
-		cost, _, pi = pretrained(data, return_pi = True)
+		cost, _, pi = pretrained(data, return_pi = True, decode_type = args.decode_type)
 	print(f'{pi[0]}\ninference time: {time()-t1}s')
 	plot_route(data, pi, 'Pretrained', cost[0], 0)
 	# model = AttentionModel(embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
