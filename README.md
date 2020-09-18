@@ -42,16 +42,21 @@ python config.py
 you would see the pickle file in "Pkl" dir. now you can start training the model.
 
 ```
-python train.py -p 'Pkl/***.pkl'
+python train.py -p Pkl/***.pkl
 ```
 
 Plot prediction of the pretrained model
 
 ```
-python plot.py -p 'Weights/***.h5'
+python plot.py -p Weights/***.pt(or ***.h5)
 ```
 
 If you want to verify your model, you can use opensource dataset in "OpenData" dir.
 ```
-python plot.py -p 'Weights/***.h5' -t '../OpenData/A-n***.txt'
+python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt
 ```
+
+## Reference
+* https://github.com/wouterkool/attention-learn-to-route
+* https://github.com/d-eremeev/ADM-VRP
+* https://qiita.com/ohtaman/items/0c383da89516d03c3ac0

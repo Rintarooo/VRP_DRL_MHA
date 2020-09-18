@@ -7,7 +7,7 @@ def arg_parser():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-m', '--mode', metavar = 'M', type = str, default = 'train', choices = ['train', 'test'], help = 'train or test')
 	parser.add_argument('--seed', metavar = 'SE', type = int, default = 123, help = 'random seed number for inference, reproducibility')
-	parser.add_argument('-nc', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
+	parser.add_argument('-n', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
 
 	# train config
 	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 512, help = 'batch size')
@@ -68,19 +68,20 @@ def load_pkl(pkl_path, verbose = True):
 def train_parser():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-p', '--path', metavar = 'P', type = str, 
-						default = './Pkl/VRP20_train.pkl',
-						help = './Pkl/VRP***_train.pkl, pkl file only, default: ./Pkl/VRP20_train.pkl')
+						default = 'Pkl/VRP20_train.pkl',
+						help = 'Pkl/VRP***_train.pkl, pkl file only, default: Pkl/VRP20_train.pkl')
 	args = parser.parse_args()
 	return args
 
 def test_parser():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-p', '--path', metavar = 'P', type = str, required = True,  
-						help = './Weights/VRP***_train_epoch***.pt, pt file only')
-	parser.add_argument('-nc', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
-	parser.add_argument('-s', '--seed', metavar = 'SE', type = int, default = 123, help = 'random seed number for inference, reproducibility')
-	parser.add_argument('-t', '--txt', metavar = 'TF', type = str, help = 'if you wanna test out on text file, example: ./OpenData/A-n53-k7.txt')
-	parser.add_argument('-dt', '--decode_type', metavar = 'DT', type = str, default = 'greedy', choices = ['greedy', 'sampling'], help = 'greedy or sampling')
+						help = 'Weights/VRP***_train_epoch***.pt, pt file required')
+	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 2, help = 'batch size')
+	parser.add_argument('-n', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
+	parser.add_argument('-s', '--seed', metavar = 'S', type = int, default = 123, help = 'random seed number for inference, reproducibility')
+	parser.add_argument('-t', '--txt', metavar = 'T', type = str, help = 'if you wanna test out on text file, example: ../OpenData/A-n53-k7.txt')
+	parser.add_argument('-d', '--decode_type', metavar = 'D', type = str, required = True, choices = ['greedy', 'sampling'], help = 'greedy or sampling required')
 	
 	args = parser.parse_args()
 	return args

@@ -36,28 +36,72 @@ def data_from_txt(path):
 	with open(path, 'r') as f:
 		lines = list(map(lambda s: s.strip(), f.readlines()))
 		customer_xy, demand = [], []
-		for i, line in enumerate(lines, 1):
-			if(i == 8):
+		ZERO, DEPOT, CUSTO, DEMAND = [False for i in range(4)]
+		ZERO = True
+		for line in lines:
+			if(ZERO):
+				if(line == 'NODE_COORD_SECTION'):
+					ZERO = False
+					DEPOT = True
+
+			elif(DEPOT):
 				depot_xy = list(map(lambda k: float(k)/100., line.split()))[1:]# depot_xy.append(list(map(int, line.split()))[1:])
-			elif(9 <= i & i <= 52):
+				DEPOT = False
+				CUSTO = True
+				
+			elif(CUSTO):
+				if(line == 'DEMAND_SECTION'):
+					DEMAND = True
+					CUSTO = False
+					continue
 				customer_xy.append(list(map(lambda k: float(k)/100., line.split()))[1:])
-			elif(55 <= i & i <= 98):
-				demand.append(list(map(lambda k: float(k)/100., line.split()))[1])# demand.append(list(map(int, line.split()))[1])
+			elif(DEMAND):
+				if(line == '1 0'):
+					continue
+				elif(line == 'DEPOT_SECTION'):
+					break
+				else:
+					demand.append(list(map(lambda k: float(k)/100., line.split()))[1])# demand.append(list(map(int, line.split()))[1])
 	
 	# print(np.array(depot_xy).shape)
 	# print(np.array(customer_xy).shape)
 	# print(np.array(demand).shape)
-	
 	tf_rand = [np.expand_dims(np.array(depot_xy), axis = 0), 
 				np.expand_dims(np.array(customer_xy), axis = 0), 
 				np.expand_dims(np.array(demand), axis = 0)]
 	return tf.data.Dataset.from_tensor_slices(tuple(tf_rand))
 
+
+# def data_from_txt(path):
+# 	if not os.path.isfile(path):
+# 		raise FileNotFoundError	
+# 	with open(path, 'r') as f:
+# 		lines = list(map(lambda s: s.strip(), f.readlines()))
+# 		customer_xy, demand = [], []
+# 		for i, line in enumerate(lines, 1):
+# 			if(i == 8):
+# 				depot_xy = list(map(lambda k: float(k)/100., line.split()))[1:]# depot_xy.append(list(map(int, line.split()))[1:])
+# 			elif(9 <= i & i <= 52):
+# 				customer_xy.append(list(map(lambda k: float(k)/100., line.split()))[1:])
+# 			elif(55 <= i & i <= 98):
+# 				demand.append(list(map(lambda k: float(k)/100., line.split()))[1])# demand.append(list(map(int, line.split()))[1])
+	
+	# print(np.array(depot_xy).shape)
+	# print(np.array(customer_xy).shape)
+	# print(np.array(demand).shape)
+	
+	# tf_rand = [np.expand_dims(np.array(depot_xy), axis = 0), 
+	# 			np.expand_dims(np.array(customer_xy), axis = 0), 
+	# 			np.expand_dims(np.array(demand), axis = 0)]
+	# return tf.data.Dataset.from_tensor_slices(tuple(tf_rand))
+
+
 if __name__ == '__main__':
 	dataset = generate_data(n_samples = 1280, n_customer = 100, seed = 123)
-	# path = './OpenData/A-n53-k7.txt'
+	
+	# path = '../OpenData/A-n53-k7.txt'
 	# dataset = data_from_txt(path)
-	# 	data = next(iter(dataset))
+	# data = next(iter(dataset))
 	
 	for i, data in enumerate(dataset.batch(1)):
 		print(data[0])
@@ -65,5 +109,3 @@ if __name__ == '__main__':
 		print(data[2])
 		if i == 0:
 			break
-	
-	

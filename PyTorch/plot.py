@@ -29,14 +29,14 @@ def get_clean_path(arr):
 		output.append(0)# insert 0 at the end of the array
 	return output
 
-def plot_route(data, pi, title, cost, idx_in_batch = 0):
+def plot_route(data, pi, costs, title, idx_in_batch = 0):
 	"""Plots journey of agent
 	Args:
 		data: dataset of graphs
 		pi: (batch, decode_step) # tour
 		idx_in_batch: index of graph in data to be plotted
 	"""
-
+	cost = costs[idx_in_batch].cpu().numpy()
 	# Remove extra zeros
 	pi_ = get_clean_path(pi[idx_in_batch].cpu().numpy())
 
@@ -94,7 +94,7 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 							marker_symbol = 'triangle-up'
 							)
 	
-	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost.cpu().numpy():.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
+	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost:.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
 					   # xaxis = dict(title = 'X', ticks='outside'),
 					   # yaxis = dict(title = 'Y', ticks='outside'),#https://kamino.hatenablog.com/entry/plotly_for_report
 					   xaxis = dict(title = 'X', range = [0, 1], showgrid=False, ticks='outside', linewidth=1, mirror=True),
@@ -115,22 +115,30 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 if __name__ == '__main__':
 	args = test_parser()
 	t1 = time()
-	print(f'loading time:{time()-t1}s')
 	pretrained = load_model(args.path, embed_dim = 128, n_customer = args.n_customer, n_encode_layers = 3)
-	print(f'loading time:{time()-t1}s')
+	print(f'model loading time:{time()-t1}s')
 	if args.txt is not None:
-		data = data_from_txt(args.txt)
+		datatxt = data_from_txt(args.txt)
+		data = []
+		for i in range(3):
+			elem = [datatxt[i].squeeze(0) for j in range(args.batch)]
+			data.append(torch.stack(elem, 0))
 	else:
-		data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed) 
-	print(f'generate time:{time()-t1}s')
+		# data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed)
+		data = []
+		for i in range(3):
+			elem = [generate_data(1, args.n_customer, args.seed)[i] for j in range(args.batch)]
+			data.append(torch.stack(elem, 0))
+	print(f'data generate time:{time()-t1}s')
 	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	pretrained = pretrained.to(device)
 	data = list(map(lambda x: x.to(device), data))
 	pretrained.eval()
 	with torch.no_grad():
-		cost, _, pi = pretrained(data, return_pi = True, decode_type = args.decode_type)
-	print(f'{pi[0]}\ninference time: {time()-t1}s')
-	plot_route(data, pi, 'Pretrained', cost[0], 0)
-	# model = AttentionModel(embed_dim = 128, n_encode_layers = 3, n_heads = 8, tanh_clipping = 10., FF_hidden = 512)
-	# cost, _, pi = model(data, return_pi = True)
-	# plot_route(data, pi, 'Untrained', cost[idx_min], idx_min)
+		costs, _, pi = pretrained(data, return_pi = True, decode_type = args.decode_type)
+	print('costs:', costs)
+	idx_in_batch = torch.argmin(costs, dim = 0)
+	print(f'decode type:{args.decode_type}\nminimum cost: {costs[idx_in_batch]:.3f} and idx: {idx_in_batch} out of {args.batch} solutions')
+	print(f'{pi[idx_in_batch]}\ninference time: {time()-t1}s')
+	plot_route(data, pi, costs, 'Pretrained', idx_in_batch)
+	

@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -7,7 +6,9 @@ from time import time
 from model import AttentionModel
 from data import generate_data, data_from_txt
 from baseline import load_model
-from config import file_parser
+from config import test_parser
+
+import tensorflow as tf
 
 def get_clean_path(arr):
 	"""Returns extra zeros from path.
@@ -29,7 +30,7 @@ def get_clean_path(arr):
 		output.append(0)# insert 0 at the end of the array
 	return output
 
-def plot_route(data, pi, title, cost, idx_in_batch = 0):
+def plot_route(data, pi, costs, title, idx_in_batch = 0):
 	"""Plots journey of agent
 	Args:
 		data: dataset of graphs
@@ -37,6 +38,7 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 		idx_in_batch: index of graph in data to be plotted
 	"""
 
+	cost = costs[idx_in_batch].numpy()
 	# Remove extra zeros
 	pi_ = get_clean_path(pi[idx_in_batch].numpy())
 
@@ -94,7 +96,7 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 							marker_symbol = 'triangle-up'
 							)
 	
-	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost.numpy():.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
+	layout = go.Layout(title = dict(text = f'<b>VRP{customer_xy.shape[0]} {title}, Total Length = {cost:.3f}</b>', x = 0.5, y = 1, yanchor = 'bottom', yref = 'paper', pad = dict(b = 10)),#https://community.plotly.com/t/specify-title-position/13439/3
 					   # xaxis = dict(title = 'X', ticks='outside'),
 					   # yaxis = dict(title = 'Y', ticks='outside'),#https://kamino.hatenablog.com/entry/plotly_for_report
 					   xaxis = dict(title = 'X', range = [0, 1], showgrid=False, ticks='outside', linewidth=1, mirror=True),
@@ -114,22 +116,27 @@ def plot_route(data, pi, title, cost, idx_in_batch = 0):
 	fig.show()
 
 if __name__ == '__main__':
+	args = test_parser()
 	t1 = time()
-	model = AttentionModel()
-	pretrained = load_model(file_parser().path)
-
-	# dataset = generate_data(n_samples = 1, n_customer = 50, seed = 3) 
-	# dataset = data_from_txt('./OpenData/A-n45-k7.txt')
-	# for i, data in enumerate(dataset.repeat().batch(100)):
-	
-	dataset = generate_data(n_samples = 128, n_customer = 100, seed = 29) 
-	for i, data in enumerate(dataset.batch(128)):
-		cost, _, pi = pretrained(data, return_pi = True)
-		# idx_min = tf.argmin(cost, axis = 0)
-		# plot_route(data, pi, 'Pretrained', cost[idx_min], idx_min)
-		plot_route(data, pi, 'Pretrained', cost[0], 0)
-		# cost, _, pi = model(data, return_pi = True)
-		# plot_route(data, pi, 'Untrained', cost[idx_min], idx_min)
+	pretrained = load_model(args.path, embed_dim = 128, n_customer = args.n_customer, n_encode_layers = 3)
+	# model = AttentionModel()
+	print(f'model loading time:{time()-t1}s')
+	if args.txt is not None:
+		dataset = data_from_txt(args.txt)
+	else:
+		dataset = generate_data(n_samples = 1, n_customer = args.n_customer, seed = args.seed) 	
+	print(f'data generate time:{time()-t1}s')
+		
+	# dataset = generate_data(n_samples = 128, n_customer = 100, seed = 29) 
+	# for i, data in enumerate(dataset.batch(128)):
+	for i, data in enumerate(dataset.repeat().batch(args.batch)):
+		costs, _, pi = pretrained(data, return_pi = True, decode_type = args.decode_type)
+		idx_in_batch = tf.argmin(costs, axis = 0)
+		print('costs:', costs)
+		print(f'decode type:{args.decode_type}\nminimum cost: {costs[idx_in_batch]:.3f} and idx: {idx_in_batch} out of {args.batch} solutions')
+		print(f'{pi[idx_in_batch]}\ninference time: {time()-t1}s')
+		plot_route(data, pi, costs, 'Pretrained', idx_in_batch)
+		# costs, _, pi = model(data, return_pi = True)
+		# plot_route(data, pi, costs, 'Untrained', idx_min)
 		if i == 0:
 			break
-	print(f'{time()-t1}s')
