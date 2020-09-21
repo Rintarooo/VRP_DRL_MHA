@@ -52,6 +52,10 @@ python plot.py -p Weights/***.pt(or ***.h5)
 ```
 
 If you want to verify your model, you can use opensource dataset in "OpenData" dir.
+  
+Opensource data is obtained from Augerat et al.(1995)
+  
+please refer to [Capacitated VRP Instances by NEO Research Group](https://neo.lcc.uma.es/vrp/vrp-instances/capacitated-vrp-instances/)
 ```
 python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt
 ```
