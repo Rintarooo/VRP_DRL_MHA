@@ -13,7 +13,7 @@ from config import Config, load_pkl, train_parser
 def train(cfg, log_path = None):
 	torch.backends.cudnn.benchmark = True
 	def rein_loss(model, inputs, bs, t, device):
-		inputs = list(map(lambda x: x.to(device), inputs))
+		# ~ inputs = list(map(lambda x: x.to(device), inputs))
 		L, ll = model(inputs, decode_type = 'sampling')
 		b = bs[t] if bs is not None else baseline.eval(inputs, L)
 		return ((L - b.to(device)) * ll).mean(), L.mean()
@@ -29,7 +29,7 @@ def train(cfg, log_path = None):
 	t1 = time()
 	for epoch in range(cfg.epochs):
 		ave_loss, ave_L = 0., 0.
-		dataset = Generator(cfg.batch*cfg.batch_steps, cfg.n_customer)
+		dataset = Generator(device, cfg.batch*cfg.batch_steps, cfg.n_customer)
 		
 		bs = baseline.eval_all(dataset)
 		bs = bs.view(-1, cfg.batch) if bs is not None else None# bs: (cfg.batch_steps, cfg.batch) or None

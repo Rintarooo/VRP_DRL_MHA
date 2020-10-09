@@ -177,6 +177,7 @@ def improve_opt2(pi, data, idx_in_batch):
 if __name__ == '__main__':
 	args = test_parser()
 	t1 = time()
+	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	pretrained = load_model(args.path, embed_dim = 128, n_customer = args.n_customer, n_encode_layers = 3)
 	print(f'model loading time:{time()-t1}s')
 	if args.txt is not None:
@@ -185,16 +186,14 @@ if __name__ == '__main__':
 		for i in range(3):
 			elem = [datatxt[i].squeeze(0) for j in range(args.batch)]
 			data.append(torch.stack(elem, 0))
+		data = list(map(lambda x: x.to(device), data))
 	else:
-		# data = generate_data(n_samples = 2, n_customer = args.n_customer, seed = args.seed)
 		data = []
 		for i in range(3):
-			elem = [generate_data(1, args.n_customer, args.seed)[i] for j in range(args.batch)]
+			elem = [generate_data(device, 1, args.n_customer, args.seed)[i].squeeze(0) for j in range(args.batch)]
 			data.append(torch.stack(elem, 0))
 	print(f'data generate time:{time()-t1}s')
-	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	pretrained = pretrained.to(device)
-	data = list(map(lambda x: x.to(device), data))
 	pretrained.eval()
 	with torch.no_grad():
 		costs, _, pi = pretrained(data, return_pi = True, decode_type = args.decode_type)

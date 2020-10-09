@@ -83,7 +83,7 @@ class RolloutBaseline:
 		
 		self.model = self.model.to(self.device)
 		# We generate a new dataset for baseline model on each baseline update to prevent possible overfitting
-		self.dataset = Generator(n_samples = self.n_rollout_samples, n_customer = self.n_customer)
+		self.dataset = Generator(self.device, n_samples = self.n_rollout_samples, n_customer = self.n_customer)
 
 		print(f'Evaluating baseline model on baseline dataset (epoch = {epoch})')
 		self.bl_vals = self.rollout(self.model, self.dataset).cpu().numpy()
@@ -162,7 +162,7 @@ class RolloutBaseline:
 		dataloader = DataLoader(dataset, batch_size = batch)
 		for inputs in tqdm(dataloader, disable = disable_tqdm, desc = 'Rollout greedy execution'):
 			with torch.no_grad():
-				inputs = list(map(lambda x: x.to(self.device), inputs))
+				# ~ inputs = list(map(lambda x: x.to(self.device), inputs))
 				cost, _ = model(inputs, decode_type = 'greedy')
 				# costs_list.append(cost.data.cpu())
 				costs_list.append(cost)
