@@ -48,7 +48,7 @@ python train.py -p Pkl/***.pkl
 Plot prediction of the pretrained model
 
 ```
-python plot.py -p Weights/***.pt(or ***.h5)
+python plot.py -p Weights/***.pt(or ***.h5) -d sampling -b 128
 ```
 
 If you want to verify your model, you can use opensource dataset in "OpenData" dir.
@@ -60,7 +60,7 @@ please refer to [Capacitated VRP Instances by NEO Research Group](https://neo.lc
 python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt -d sampling -b 128
 ```
 
-One example would be `python plot.py -p Weights/VRP50_train_epoch19.pt -t ../OpenData/A-n45-k7.txt -d sampling -b 128` 
+One example would be `cd PyTorch && python plot.py -p Weights/VRP50_train_epoch19.pt -t ../OpenData/A-n45-k7.txt -d sampling -b 128` 
 
 ## Reference
 * https://github.com/wouterkool/attention-learn-to-route
