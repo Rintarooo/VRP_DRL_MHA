@@ -57,8 +57,10 @@ Opensource data is obtained from Augerat et al.(1995)
   
 please refer to [Capacitated VRP Instances by NEO Research Group](https://neo.lcc.uma.es/vrp/vrp-instances/capacitated-vrp-instances/)
 ```
-python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt
+python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt -d sampling -b 128
 ```
+
+One example would be `python plot.py -p Weights/VRP50_train_epoch19.pt -t ../OpenData/A-n45-k7.txt -d sampling -b 128` 
 
 ## Reference
 * https://github.com/wouterkool/attention-learn-to-route
