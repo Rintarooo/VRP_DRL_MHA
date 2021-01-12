@@ -1,6 +1,6 @@
-# CVRP solver with Multi Heads Attention
+# CVRP solver with Multi-Head Attention
 
-TensorFlow2 and PyTorch implementation of ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!(Kool et al. 2019)(https://arxiv.org/pdf/1803.08475.pdf)
+TensorFlow2 and PyTorch implementation of `ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!`(Kool et al. 2019)(https://arxiv.org/pdf/1803.08475.pdf)
 
 <img src="https://user-images.githubusercontent.com/51239551/88506411-cd450f80-d014-11ea-84eb-12e7ab983780.gif" width="650"/>
 
@@ -46,15 +46,16 @@ python train.py -p Pkl/***.pkl
 ```
 
 Plot prediction of the pretrained model
+(in this example, batch size is 128, number of customer nodes is 50)
 
 ```
-python plot.py -p Weights/***.pt(or ***.h5) -b 128
+python plot.py -p Weights/***.pt(or ***.h5) -b 128 -n 50
 ```
 
 You can change `plot.py` into `plot_2opt.py`.  
   
-2opt is local search method, which improve a crossed route by swapping arcs.  
-   
+2opt is a local search method, which improves a crossed route by swapping arcs.  
+
 If you want to verify your model, you can use opensource dataset in `OpenData` dir.
   
 Opensource data is obtained from Augerat et al.(1995)
