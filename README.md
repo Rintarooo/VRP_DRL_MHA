@@ -27,7 +27,7 @@ TensorFlow2 and PyTorch implementation of ATTENTION, LEARN TO SOLVE ROUTING PROB
 
 ## Usage
 
-First move to "PyTorch" or "TensorFlow2" dir. 
+First move to `PyTorch` or `TensorFlow2` dir. 
 
 ```
 cd PyTorch
@@ -39,7 +39,7 @@ Then, generate the pickle file contaning hyperparameter values by running the fo
 python config.py
 ```
 
-you would see the pickle file in "Pkl" dir. now you can start training the model.
+you would see the pickle file in `Pkl` dir. now you can start training the model.
 
 ```
 python train.py -p Pkl/***.pkl
@@ -48,16 +48,20 @@ python train.py -p Pkl/***.pkl
 Plot prediction of the pretrained model
 
 ```
-python plot.py -p Weights/***.pt(or ***.h5) -d sampling -b 128
+python plot.py -p Weights/***.pt(or ***.h5) -b 128
 ```
 
-If you want to verify your model, you can use opensource dataset in "OpenData" dir.
+You can change `plot.py` into `plot_2opt.py`.  
+  
+2opt is local search method, which improve a crossed route by swapping arcs.  
+   
+If you want to verify your model, you can use opensource dataset in `OpenData` dir.
   
 Opensource data is obtained from Augerat et al.(1995)
   
 please refer to [Capacitated VRP Instances by NEO Research Group](https://neo.lcc.uma.es/vrp/vrp-instances/capacitated-vrp-instances/)
 ```
-python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt -d sampling -b 128
+python plot.py -p Weights/***.pt -t ../OpenData/A-n***.txt -b 128
 ```
 
 One example would be `cd PyTorch && python plot.py -p Weights/VRP50_train_epoch19.pt -t ../OpenData/A-n45-k7.txt -d sampling -b 128` 

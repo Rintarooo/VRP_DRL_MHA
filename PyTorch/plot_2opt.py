@@ -118,24 +118,28 @@ def plot_route(data, pi, costs, title, idx_in_batch = 0, is_tensor = True):
 
 def opt2(route, dist): 
 	size = len(route)
-	for i in range(size - 2):
-		i1 = i + 1
-		a = route[i]
-		b = route[i1]
-		for j in range(i + 2, size):
-			j1 = j + 1
-			if j == size - 1:
-				j1 = 0
+	improved = True
+	while improved:
+		improved = False
+		for i in range(size - 2):
+			i1 = i + 1
+			a = route[i]
+			b = route[i1]
+			for j in range(i + 2, size):
+				j1 = j + 1
+				if j == size - 1:
+					j1 = 0
 
-			c = route[j]
-			d = route[j1]
-			if i == 0 and j1 == 0: continue# if i == j1
-			if(dist[a][c] + dist[b][d] < dist[a][b] + dist[c][d]):
-				""" i i+1 j j+1
-					swap(i+1, j)
-				"""
-				tmp = route[i1:j1]
-				route[i1:j1] = tmp[::-1]# tmp in inverse order 
+				c = route[j]
+				d = route[j1]
+				if i == 0 and j1 == 0: continue# if i == j1
+				if(dist[a][c] + dist[b][d] < dist[a][b] + dist[c][d]):
+					""" i i+1 j j+1
+						swap(i+1, j)
+					"""
+					tmp = route[i1:j1]
+					route[i1:j1] = tmp[::-1]# tmp in inverse order
+					improved = True 
 	return route
 
 def get_sum_dist(route, dist):
